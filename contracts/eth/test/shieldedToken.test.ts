@@ -11,6 +11,7 @@ import {
 } from "soda-sdk";
 
 import {ShieldedToken} from "../typechain-types";
+import {prepareMessageForBubble} from "./utils";
 
 dotenv.config();
 
@@ -125,6 +126,43 @@ describe("ShieldedToken", function () {
       expect(await shieldedToken.symbol()).to.equal("ssbtUSDC");
       expect(await shieldedToken.decimals()).to.equal(5);
     });
+  });
+
+  describe("Transfer Operations", function () {
+    const shieldAmount = 100n * 10n ** 18n; // 100 tokens with 18 decimals
+    const transferAmount = 50n * 10n ** 5n; // 50 tokens with 5 decimals
+
+    beforeEach(async function () {
+      // Mint and shield tokens for transfer tests
+      console.log("Minting...");
+      await (await mockToken.mint(userAddress, shieldAmount, { gasLimit: 5_000_000 })).wait();
+      console.log("approving...");
+      await (await mockToken.approve(await shieldedToken.getAddress(), shieldAmount, { gasLimit: 5_000_000 })).wait();
+      console.log("shielding...");
+      await (await shieldedToken.shield(shieldAmount, { gasLimit: 5_000_000 })).wait();
+      // wait 5 seconds to ensure the state is updated
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      // Check sender's balance
+      const senderBalanceHandle = await shieldedToken["balanceOf(address)"](userAddress);
+      console.log(senderBalanceHandle)
+      const senderBalance = await decryptBalanceViaProxy(senderBalanceHandle, wallet, userAesKey, PROXY_URL);
+      console.log(senderBalance)
+    });
+
+    it.only("should successfully transfer private tokens using clear value", async function () {
+      // Transfer to other wallet
+      const transferTx = await shieldedToken["transfer(address,uint64)"](otherWallet.address, Number(transferAmount));
+      await transferTx.wait();
+      console.log("Transfer transaction hash:", transferTx.hash);
+
+      // Check sender's balance
+      const senderBalanceHandle = await shieldedToken["balanceOf(address)"](userAddress);
+      console.log(senderBalanceHandle)
+
+      const senderBalance = await decryptBalanceViaProxy(senderBalanceHandle, wallet, userAesKey, PROXY_URL);
+      expect(senderBalance).to.equal(100n * 10n ** 5n); // 100 tokens remaining
+    });
+
   });
 
 }); 
