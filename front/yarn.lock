@@ -12213,6 +12213,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lottie-web@npm:^5.5.7":
+  version: 5.13.0
+  resolution: "lottie-web@npm:5.13.0"
+  checksum: f634eddbfc49a243af598c8c3b5b2bc347c6980cb85ef3e17a394aa52e2d4d1d04ef565d9cf1581727eec598717932abf5e0e0aba111b4d64f2a9dadaeaa98e2
+  languageName: node
+  linkType: hard
+
 "loupe@npm:^2.3.6":
   version: 2.3.7
   resolution: "loupe@npm:2.3.7"
@@ -14616,6 +14623,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-useanimations@npm:^2.10.0":
+  version: 2.10.0
+  resolution: "react-useanimations@npm:2.10.0"
+  dependencies:
+    lottie-web: ^5.5.7
+  peerDependencies:
+    react: ">=16"
+    react-dom: ">=16"
+  checksum: 0934887b86ab7fb3a762afba384c989c57c39bf83938139b95f1d2511ad5249979fc764b2bd96ad56f88b7196fa3bb873ebf60f223f65f5f41bee3e6e0558673
+  languageName: node
+  linkType: hard
+
 "react@npm:~19.0.0":
   version: 19.0.0
   resolution: "react@npm:19.0.0"
@@ -15131,6 +15150,7 @@ __metadata:
     husky: ~9.1.6
     i: ^0.3.7
     lint-staged: ~13.2.2
+    react-useanimations: ^2.10.0
     soda-sdk: ^0.0.2
   languageName: unknown
   linkType: soft

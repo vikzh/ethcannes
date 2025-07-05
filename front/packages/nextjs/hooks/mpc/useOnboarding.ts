@@ -25,6 +25,9 @@ export const useOnboarding = () => {
       if (notificationId) notification.remove(notificationId);
       setIsOnboarding(false);
       notification.success("Onboarding complete!", { icon: "" });
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("onboarded"));
+      }
       
     } catch (e: any) {
       console.error("Onboarding error:", e);

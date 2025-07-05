@@ -61,6 +61,7 @@
     "node": ">=20.18.3"
   },
   "dependencies": {
+    "react-useanimations": "^2.10.0",
     "soda-sdk": "^0.0.2"
   }
 }
