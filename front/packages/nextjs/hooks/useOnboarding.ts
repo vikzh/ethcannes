@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useAccount, useConfig } from "wagmi";
-import { completeOnboardingWagmi } from "../../utils/soda/wagmiCryptoUtils";
+import { completeOnboarding } from "../utils/enc/utils";
 import { notification } from "~~/utils/scaffold-eth";
 
-export const useOnboardingWagmi = () => {
+export const useOnboarding = () => {
   const [isOnboarding, setIsOnboarding] = useState(false);
   const [onboardError, setOnboardError] = useState<string | undefined>(undefined);
   
@@ -22,7 +22,7 @@ export const useOnboardingWagmi = () => {
       notificationId = notification.loading("Calling onboarding service");
       
       // Complete onboarding process using wagmi
-      await completeOnboardingWagmi(address, wagmiConfig);
+      await completeOnboarding(address, wagmiConfig);
 
       if (notificationId) notification.remove(notificationId);
       setIsOnboarding(false);
