@@ -47,6 +47,16 @@ contract ShieldedToken {
     /// @param _to The address of the recipient
     event Transfer(address indexed _from, address indexed _to);
 
+    /// @notice Emitted when an approval is set
+    /// @param _owner The address of the token owner
+    /// @param _spender The address of the spender
+    /// @param _value The amount of tokens approved (only for clear approvals)
+    event Approval(address indexed _owner, address indexed _spender, uint256 _value);
+    /// @notice Emitted when an approval is set (for encrypted approvals)
+    /// @param _owner The address of the token owner
+    /// @param _spender The address of the spender
+    event Approval(address indexed _owner, address indexed _spender);
+
     /**
      * @dev Constructor that sets up the initial token configuration
      */
@@ -130,6 +140,46 @@ contract ShieldedToken {
         _setNewBalances(_from, _to, newFromBalance, newToBalance);
         emit Transfer(_from, _to);
         return result;
+    }
+
+    /// @notice Approves a spender to transfer the amount of tokens given inside the IT (an encrypted and signed value)
+    /// @param _spender The address that will be approved
+    /// @param _it The encrypted and signed approval amount
+    /// @return True if the approval was successful
+    function approve(address _spender, itUint64 calldata _it) public returns (bool) {
+        return contractApprove(_spender, MpcCore.validateCiphertext(_it));
+    }
+    /// @notice Approves a spender to transfer the amount of tokens given in the clear
+    /// @param _spender The address that will be approved
+    /// @param _value The amount of tokens to approve
+    /// @return True if the approval was successful
+    function approve(address _spender, uint64 _value) public returns (bool) {
+        address owner = msg.sender;
+        gtUint64 gt = MpcCore.setPublic64(_value);
+        _setApproveValue(owner, _spender, gt);
+        emit Approval(owner, _spender, _value);
+        return true;
+    }
+    /// @notice Approves a spender to transfer the amount of tokens given in the handle
+    /// @param _spender The address that will be approved
+    /// @param _value The handle to the approval amount
+    /// @return True if the approval was successful
+    function contractApprove(address _spender, gtUint64 _value) public returns (bool) {
+        // Check if the sender is permitted to use the _value handle
+        require(MpcCore.isSenderPermitted(_value));
+        address owner = msg.sender;
+        _setApproveValue(owner, _spender, _value);
+        emit Approval(owner, _spender);
+        return true;
+    }
+    /// @notice Returns the handle to the allowance of a spender
+    /// @dev The returned handle requires encryption and decryption under the user's secret key to get the actual value
+    /// @param _owner The address of the token owner
+    /// @param _spender The address of the spender
+    /// @return The allowance handle
+    function allowance(address _owner, address _spender) public view returns (gtUint64) {
+        require(_owner == msg.sender || _spender == msg.sender);
+        return _getGTAllowance(_owner, _spender);
     }
 
     function _getBalances(address _from, address _to) private view returns (gtUint64, gtUint64) {
