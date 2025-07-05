@@ -27,6 +27,12 @@ interface TokenPairCardProps {
   onOnboard: () => void;
 }
 
+// token logo mapping
+const TOKEN_LOGOS: Record<string, string> = {
+  "0x331dacc9928d783c34b6b0f3961cad4a948155af": "https://etherscan.io/token/images/usdc_ofc_32.svg",
+  "0x353f9140fd398ec8ec16d3cc72c7d7db61c93a41": "https://etherscan.io/token/images/weth_28.png?v=2",
+};
+
 export const TokenPairCard: React.FC<TokenPairCardProps> = ({
   pair,
   index,
@@ -130,10 +136,14 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
       <div className="flex flex-col gap-4 p-4 hover:bg-gray-50 rounded-xl transition-colors border border-gray-200 flex-1 min-w-0">
         {/* Metadata */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-soda-blue-900 flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-bold text-sm">
-              {pair.data.clearTokenSymbol?.charAt(0) ?? "T"}
-            </span>
+          <div className="w-10 h-10 rounded-full bg-soda-blue-900 flex items-center justify-center flex-shrink-0 overflow-hidden">
+            {TOKEN_LOGOS[pair.clearAddress.toLowerCase()] ? (
+              <img src={TOKEN_LOGOS[pair.clearAddress.toLowerCase()]} alt={pair.data.clearTokenSymbol ?? "token"} className="w-full h-full object-contain" />
+            ) : (
+              <span className="text-white font-bold text-sm">
+                {pair.data.clearTokenSymbol?.charAt(0) ?? "T"}
+              </span>
+            )}
           </div>
           <div>
             <div className="font-semibold text-gray-900">
@@ -293,9 +303,30 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
       <div className="flex flex-col gap-4 p-4 hover:bg-gray-50 rounded-xl transition-colors border border-gray-200 flex-1 min-w-0">
         {/* Metadata */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-bold text-sm">
-              {pair.data.privateTokenSymbol?.charAt(0) ?? "P"}
+          <div className="relative w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center flex-shrink-0">
+            {TOKEN_LOGOS[pair.clearAddress.toLowerCase()] ? (
+              <img src={TOKEN_LOGOS[pair.clearAddress.toLowerCase()]} alt={pair.data.privateTokenSymbol ?? "token"} className="w-full h-full object-contain" />
+            ) : (
+              <span className="text-white font-bold text-sm">
+                {pair.data.privateTokenSymbol?.charAt(0) ?? "P"}
+              </span>
+            )}
+            {/* small shield badge */}
+            <span className="absolute -bottom-1 -right-1 bg-soda-blue-600 p-1 rounded-full">
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="white"
+                className="w-4 h-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.623 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
+                />
+              </svg>
             </span>
           </div>
           <div>

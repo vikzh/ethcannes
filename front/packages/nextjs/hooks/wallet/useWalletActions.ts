@@ -153,7 +153,6 @@ export const useWalletActions = (
 
   const shield = async (tokenPair: TokenPair, amount: string) => {
     if (!amount || !address) return;
-    setIsShielding(true);
     setShieldError(undefined);
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
@@ -161,11 +160,14 @@ export const useWalletActions = (
       const clearTokenDecimals = tokenPair.data.clearTokenDecimals || 18;
       const amountToShield = ethers.parseUnits(amount, clearTokenDecimals);
       const clearContract = new ethers.Contract(tokenPair.clearAddress, CLEAR_TOKEN_ABI, provider);
+
+      // -------- Pre-transaction validations --------
       const currentBalance = await clearContract.balanceOf(address);
       if (BigInt(currentBalance) < BigInt(amountToShield)) {
         setShieldError(`Insufficient balance. You only have ${ethers.formatUnits(currentBalance, clearTokenDecimals)} ${tokenPair.data.clearTokenSymbol}.`);
         return;
       }
+
       let currentAllowance = tokenAllowances[tokenPair.privateAddress];
       if (!currentAllowance) {
         const allowance = await clearContract.allowance(address, tokenPair.privateAddress);
@@ -176,11 +178,16 @@ export const useWalletActions = (
         setShieldError(`Insufficient allowance. Please approve ${tokenPair.data.clearTokenSymbol} tokens first.`);
         return;
       }
+
+      // -------- User signature & tx broadcast --------
       const privateContract = new ethers.Contract(tokenPair.privateAddress, PRIVATE_TOKEN_ABI, signer);
-      // Capture balance BEFORE submitting the transaction
       const prevClearBalance = (await clearContract.balanceOf(address)).toString();
 
-      const tx = await privateContract.shield(amountToShield);
+      const tx = await privateContract.shield(amountToShield); // <-- user signs here
+
+      // Start animation/progress after successful signature
+      setIsShielding(true);
+
       await handleTxWithClearBalanceChange(
         tx,
         clearContract,
@@ -195,13 +202,13 @@ export const useWalletActions = (
       setShieldError(err?.message || "Failed to shield tokens");
       notification.error("Failed to shield tokens");
     } finally {
+      // Ensure we stop the animation regardless of outcome
       setIsShielding(false);
     }
   };
 
   const unshield = async (tokenPair: TokenPair, amount: string) => {
     if (!amount || !address) return;
-    setIsUnshielding(true);
     setShieldError(undefined);
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
@@ -209,7 +216,12 @@ export const useWalletActions = (
       const privateContract = new ethers.Contract(tokenPair.privateAddress, PRIVATE_TOKEN_ABI, signer);
       const privateDecimals = tokenPair.data.privateTokenDecimals ?? 5;
       const amountToUnshield = ethers.parseUnits(amount, privateDecimals);
-      const tx = await privateContract.unshield(amountToUnshield);
+
+      const tx = await privateContract.unshield(amountToUnshield); // <-- user signs here
+
+      // Start animation/progress after signature
+      setIsUnshielding(true);
+
       await tx.wait();
       notification.success("Unshield request submitted!");
       const clearContract = new ethers.Contract(tokenPair.clearAddress, CLEAR_TOKEN_ABI, provider);
