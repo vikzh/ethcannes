@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { useAccount } from "wagmi";
 import { TokenPair } from "../mpc";
@@ -21,7 +21,44 @@ export const useWalletActions = (
   const [isMinting, setIsMinting] = useState(false);
   const [shieldError, setShieldError] = useState<string | undefined>(undefined);
   const tokenAllowances: Record<string, string> = {};
-  const [approvedTokens, setApprovedTokens] = useState<Set<string>>(new Set());
+
+  /* ---------------------------------------------------------------------
+   * Approved token addresses are now persisted in localStorage under a key
+   * scoped to the connected wallet. Structure: `approvedTokens:<wallet>` →
+   * JSON-encoded array of token addresses (lower-cased).
+   * ------------------------------------------------------------------- */
+
+  const STORAGE_KEY_PREFIX = "approvedTokens:";
+
+  const getStoredApprovedTokens = (wallet?: string | undefined): Set<string> => {
+    if (!wallet || typeof window === "undefined") return new Set();
+    try {
+      const raw = window.localStorage.getItem(`${STORAGE_KEY_PREFIX}${wallet.toLowerCase()}`);
+      if (!raw) return new Set();
+      const parsed: unknown = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        // Ensure all items are strings
+        return new Set(parsed.filter(item => typeof item === "string").map(addr => addr.toLowerCase()));
+      }
+      return new Set();
+    } catch {
+      return new Set();
+    }
+  };
+
+  const persistApprovedTokens = (wallet: string, set: Set<string>) => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(`${STORAGE_KEY_PREFIX}${wallet.toLowerCase()}`, JSON.stringify(Array.from(set)));
+    } catch {}
+  };
+
+  const [approvedTokens, setApprovedTokens] = useState<Set<string>>(() => getStoredApprovedTokens(address));
+
+  // Hydrate / reset when wallet address changes
+  useEffect(() => {
+    setApprovedTokens(getStoredApprovedTokens(address));
+  }, [address]);
 
   const handleApprove = async (tokenPair: TokenPair) => {
     if (!address) return;
@@ -35,7 +72,11 @@ export const useWalletActions = (
       await tx.wait();
       const newAllowance = await contract.allowance(address, tokenPair.privateAddress);
       tokenAllowances[tokenPair.privateAddress] = newAllowance.toString();
-      setApprovedTokens(prev => new Set(prev).add(tokenPair.privateAddress));
+      setApprovedTokens(prev => {
+        const next = new Set(prev).add(tokenPair.privateAddress.toLowerCase());
+        if (address) persistApprovedTokens(address, next);
+        return next;
+      });
       setShieldError(undefined);
       notification.success(`Approval successful for ${tokenPair.data.clearTokenSymbol}!`);
     } catch (err: any) {
@@ -275,7 +316,7 @@ export const useWalletActions = (
     }
   };
 
-  const isTokenApproved = (privateAddress: string) => approvedTokens.has(privateAddress);
+  const isTokenApproved = (privateAddress: string) => approvedTokens.has(privateAddress.toLowerCase());
 
   const refreshAllowance = async (tokenPair: TokenPair) => {
     if (!address) return;
@@ -285,8 +326,9 @@ export const useWalletActions = (
       const allowance = await clearContract.allowance(address, tokenPair.privateAddress);
       setApprovedTokens(prev => {
         const next = new Set(prev);
-        if (allowance > 0n) next.add(tokenPair.privateAddress);
-        else next.delete(tokenPair.privateAddress);
+        if (allowance > 0n) next.add(tokenPair.privateAddress.toLowerCase());
+        else next.delete(tokenPair.privateAddress.toLowerCase());
+        if (address) persistApprovedTokens(address, next);
         return next;
       });
     } catch {}
