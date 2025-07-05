@@ -12,9 +12,7 @@ import { Header } from "~~/components/Header";
 import { BlockieAvatar } from "~~/components/scaffold-eth";
 import { useInitializeNativeCurrencyPrice } from "~~/hooks/scaffold-eth";
 import { wagmiConfig } from "~~/services/web3/wagmiConfig";
-
-// Import the toolbar
-import { initToolbar } from '@stagewise/toolbar';
+import { OnboardingGate } from "./OnboardingGate";
 
 // Define your toolbar configuration
 const stagewiseConfig = {
@@ -47,16 +45,6 @@ export const queryClient = new QueryClient({
 export const ScaffoldEthAppWithProviders = ({ children }: { children: React.ReactNode }) => {
   const { resolvedTheme } = useTheme();
   const isDarkMode = resolvedTheme === "dark";
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    
-    // Initialize Stagewise toolbar in development mode
-    if (process.env.NODE_ENV === 'development') {
-      initToolbar(stagewiseConfig);
-    }
-  }, []);
 
   return (
     <WagmiProvider config={wagmiConfig}>
@@ -64,8 +52,9 @@ export const ScaffoldEthAppWithProviders = ({ children }: { children: React.Reac
         <ProgressBar height="3px" color="#2299dd" />
         <RainbowKitProvider
           avatar={BlockieAvatar}
-          theme={mounted ? (isDarkMode ? darkTheme() : lightTheme()) : lightTheme()}
+          theme={isDarkMode ? darkTheme() : lightTheme()}
         >
+          <OnboardingGate />
           <ScaffoldEthApp>{children}</ScaffoldEthApp>
         </RainbowKitProvider>
       </QueryClientProvider>
