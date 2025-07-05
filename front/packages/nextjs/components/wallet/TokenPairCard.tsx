@@ -8,7 +8,6 @@ import { BottomPanelType } from "./ActionPanel";
 interface TokenPairCardProps {
   pair: TokenPair;
   index: number;
-  testUsdPrice: number;
   chainId: number;
   
   // Panel state
@@ -31,7 +30,6 @@ interface TokenPairCardProps {
 export const TokenPairCard: React.FC<TokenPairCardProps> = ({
   pair,
   index,
-  testUsdPrice,
   chainId,
   bottomPanelType,
   activeRowIndex,
@@ -152,7 +150,7 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
                       pair.clearTokenBalance,
                       pair.data.clearTokenDecimals,
                     ),
-                  ) * testUsdPrice
+                  )
                 ).toFixed(2)
               : "0.00"}
           </div>
@@ -311,11 +309,11 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
               ? "$" +
                 (
                   parseFloat(
-                    formatPrivateBalance(
+                    ethers.formatUnits(
                       pair.privateTokenBalance,
                       pair.data.privateTokenDecimals,
                     ),
-                  ) * testUsdPrice
+                  )
                 ).toFixed(2)
               : "0.00"}
           </div>
@@ -324,10 +322,12 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
               {isBalanceHidden || !getUserKeyFromStorage() || pair.chainId !== chainId
                 ? "*****"
                 : pair.data.privateTokenDecimals !== null && pair.privateTokenBalance
-                ? formatPrivateBalance(
-                    pair.privateTokenBalance,
-                    pair.data.privateTokenDecimals,
-                  )
+                ? parseFloat(
+                    ethers.formatUnits(
+                      pair.privateTokenBalance,
+                      pair.data.privateTokenDecimals,
+                    ),
+                  ).toFixed(2)
                 : "*****"}
             </span>
             {/* Toggle visibility button */}

@@ -6,7 +6,6 @@ import { useWalletActions } from "../../../hooks/wallet/useWalletActions";
 
 interface Props {
   chainId: number;
-  testUsdPrice: number;
   filteredTokenPairs: TokenPair[];
   isRefreshingBalance: boolean;
   clickedButton: { action: string; networkId: number; index: number } | null;
@@ -19,7 +18,6 @@ interface Props {
 
 const TokenPairsList: React.FC<Props> = ({
   chainId,
-  testUsdPrice,
   filteredTokenPairs,
   isRefreshingBalance,
   clickedButton,
@@ -100,7 +98,6 @@ const TokenPairsList: React.FC<Props> = ({
           <TokenPairCard
             pair={pair}
             index={index}
-            testUsdPrice={testUsdPrice}
             chainId={chainId}
             bottomPanelType={bottomPanelType}
             activeRowIndex={activeRowIndex}

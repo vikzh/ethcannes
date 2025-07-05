@@ -63,8 +63,6 @@ const WalletPage = () => {
     setPendingNetworkSwitch(null);
   };
 
-  const [testUsdPrice] = useState(() => 0.98 + Math.random() * 0.03);
-
   if (isLoading) {
     return <Loading />;
   }
@@ -78,7 +76,6 @@ const WalletPage = () => {
             <div className="bg-white rounded-3xl shadow-lg p-6 mt-6">
               <TokenPairsList
                 chainId={chainId}
-                testUsdPrice={testUsdPrice}
                 filteredTokenPairs={filteredTokenPairs}
                 isRefreshingBalance={isRefreshingBalance}
                 clickedButton={clickedButton}
