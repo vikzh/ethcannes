@@ -1,7 +1,7 @@
 # CLAUDE.md - ETH Cannes Project Context
 
 ## Project Overview
-Privacy-focused cryptocurrency wallet built on Scaffold-ETH 2 using SodaLabs deployed contracts on Base Sepolia testnet for token shielding operations.
+Privacy-focused cryptocurrency project
 
 ## Key Information for Context Switches
 
@@ -23,7 +23,7 @@ ethcannes/
 └── CLAUDE.md                       # This context file
 ```
 
-### Core Contracts (SodaLabs)
+### Core Contracts
 - **PrivateERC20Factory**: `0x7e58A85165722785AE9CeaDa3D8c2188DCEADDAb`
 - **Network**: Base Sepolia (Chain ID: 84532)
 - **RPC**: `https://twilight-chaotic-morning.base-sepolia.quiknode.pro/d6d907b0bc59d36bb407d8569350f9e31d4d60af/`

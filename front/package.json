@@ -58,5 +58,8 @@
   "packageManager": "yarn@3.2.3",
   "engines": {
     "node": ">=20.18.3"
+  },
+  "dependencies": {
+    "soda-sdk": "^0.0.2"
   }
 }

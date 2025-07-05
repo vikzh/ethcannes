@@ -1,4 +1,4 @@
-# ETH Cannes Implementation Plan - SodaLabs Deployed Contracts
+# ETH Cannes Implementation Plan
 
 ## Project Overview
 Privacy-focused cryptocurrency wallet built on Scaffold-ETH 2 using SodaLabs deployed contracts on Base Sepolia testnet.
@@ -15,7 +15,7 @@ Privacy-focused cryptocurrency wallet built on Scaffold-ETH 2 using SodaLabs dep
 ## Phase 1: Contract Integration (Week 1)
 
 ### Day 1: Contract Setup
-- [ ] Update `deployedContracts.ts` with SodaLabs factory address
+- [ ] Update `deployedContracts.ts`
 - [ ] Configure Base Sepolia network in hardhat.config.ts
 - [ ] Add contract ABIs to project
 - [ ] Test factory connection
