@@ -1,28 +1,26 @@
 import { useState } from "react";
-import { useAccount, useConfig } from "wagmi";
-import { completeOnboarding } from "../utils/enc/utils";
+import { ethers } from "ethers";
+import { completeOnboarding } from "../../utils/soda/cryptoUtils";
 import { notification } from "~~/utils/scaffold-eth";
 
 export const useOnboarding = () => {
   const [isOnboarding, setIsOnboarding] = useState(false);
   const [onboardError, setOnboardError] = useState<string | undefined>(undefined);
-  
-  const { address } = useAccount();
-  const wagmiConfig = useConfig();
 
-  const handleOnboard = async () => {
+  const handleOnboard = async (address: string | undefined) => {
     setIsOnboarding(true);
     setOnboardError(undefined);
     let notificationId;
     
     try {
-      if (!address) throw new Error("Wallet not connected");
-      if (!wagmiConfig) throw new Error("Wagmi config not available");
+      if (!window.ethereum || !address) throw new Error("Wallet not connected");
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
 
       notificationId = notification.loading("Calling onboarding service");
       
-      // Complete onboarding process using wagmi
-      await completeOnboarding(address, wagmiConfig);
+      // Complete onboarding process
+      await completeOnboarding(signer);
 
       if (notificationId) notification.remove(notificationId);
       setIsOnboarding(false);
@@ -41,6 +39,5 @@ export const useOnboarding = () => {
     handleOnboard,
     isOnboarding,
     onboardError,
-    address,
   };
-};
+}; 
