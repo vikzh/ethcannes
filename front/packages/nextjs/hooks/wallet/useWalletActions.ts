@@ -21,6 +21,7 @@ export const useWalletActions = (
   const [isMinting, setIsMinting] = useState(false);
   const [shieldError, setShieldError] = useState<string | undefined>(undefined);
   const tokenAllowances: Record<string, string> = {};
+  const [approvedTokens, setApprovedTokens] = useState<Set<string>>(new Set());
 
   const handleApprove = async (tokenPair: TokenPair) => {
     if (!address) return;
@@ -34,6 +35,7 @@ export const useWalletActions = (
       await tx.wait();
       const newAllowance = await contract.allowance(address, tokenPair.privateAddress);
       tokenAllowances[tokenPair.privateAddress] = newAllowance.toString();
+      setApprovedTokens(prev => new Set(prev).add(tokenPair.privateAddress));
       setShieldError(undefined);
       notification.success(`Approval successful for ${tokenPair.data.clearTokenSymbol}!`);
     } catch (err: any) {
@@ -261,6 +263,23 @@ export const useWalletActions = (
     }
   };
 
+  const isTokenApproved = (privateAddress: string) => approvedTokens.has(privateAddress);
+
+  const refreshAllowance = async (tokenPair: TokenPair) => {
+    if (!address) return;
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const clearContract = new ethers.Contract(tokenPair.clearAddress, CLEAR_TOKEN_ABI, provider);
+      const allowance = await clearContract.allowance(address, tokenPair.privateAddress);
+      setApprovedTokens(prev => {
+        const next = new Set(prev);
+        if (allowance > 0n) next.add(tokenPair.privateAddress);
+        else next.delete(tokenPair.privateAddress);
+        return next;
+      });
+    } catch {}
+  };
+
   return {
     approvingTokens,
     isTransferring,
@@ -274,5 +293,7 @@ export const useWalletActions = (
     shield,
     unshield,
     mint,
+    isTokenApproved,
+    refreshAllowance,
   } as const;
 }; 

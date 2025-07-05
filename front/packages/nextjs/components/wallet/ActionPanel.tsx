@@ -24,6 +24,7 @@ interface ActionPanelProps {
   isShielding: boolean;
   isApproving: boolean;
   shieldError?: string;
+  isApproved: boolean;
   onShieldAmountChange: (value: string) => void;
   onApprove: () => void;
   onShield: () => void;
@@ -56,6 +57,7 @@ export const ActionPanel: React.FC<ActionPanelProps> = ({
   isShielding,
   isApproving,
   shieldError,
+  isApproved,
   onShieldAmountChange,
   onApprove,
   onShield,
@@ -80,7 +82,7 @@ export const ActionPanel: React.FC<ActionPanelProps> = ({
       case "transfer-private":
         return "Send Private Tokens";
       case "shield":
-        return "Shield Clear → Private";
+        return isApproved ? "Shield Clear → Private" : "Approve Token to Shield";
       case "unshield":
         return "Unshield Private → Clear";
       case "mint":
@@ -127,6 +129,7 @@ export const ActionPanel: React.FC<ActionPanelProps> = ({
             isShielding={isShielding}
             isApproving={isApproving}
             shieldError={shieldError}
+            isApproved={isApproved}
             currentNetworkData={currentNetworkData}
             currentTokenPair={currentTokenPair}
             onShieldAmountChange={onShieldAmountChange}
