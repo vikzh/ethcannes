@@ -40,6 +40,8 @@ contract ShieldedToken {
     string private _name;
     /// @notice The symbol of the token
     string private _symbol;
+    /// @notice The total supply of tokens
+    uint256 private _totalSupply;
 
     /// @notice Emitted when tokens are transferred
     /// @param _from The address of the sender
@@ -61,6 +63,8 @@ contract ShieldedToken {
     /// @param _spender The address of the spender
     event Approval(address indexed _owner, address indexed _spender);
 
+    event Shield(address indexed from, uint256 amount);
+
     /**
      * @dev Constructor that sets up the initial token configuration
      */
@@ -72,6 +76,39 @@ contract ShieldedToken {
         zero = MpcCore.setPublic64(0);
         // Permit the contract to use the zero handle
         MpcCore.permitThis(zero);
+    }
+
+    /// @notice Returns the name of the token
+    /// @return The token name
+    function name() public view returns (string memory) {
+        return _name;
+    }
+    /// @notice Returns the symbol of the token
+    /// @return The token symbol
+    function symbol() public view returns (string memory) {
+        return _symbol;
+    }
+
+    /// @notice Returns the total supply of tokens
+    /// @return The total supply
+    function totalSupply() public view returns (uint256) {
+        return _totalSupply;
+    }
+
+    /// @notice Returns the handle of the caller's balance
+    /// @dev The balance is returned as a handle that requires encryption and decryption under the user's secret key to get the actual value
+    /// @return The balance handle
+    function balanceOf() public view returns (gtUint64) {
+        return balances[msg.sender];
+    }
+
+    /// @notice Returns the handle to the balance of the given address
+    /// @dev The balance is returned as a handle that requires encryption and decryption under the user's secret key to get the actual value.
+    /// Returns zero handle if balance is uninitialized, which can be used by clients to determine if decryption is needed.
+    /// @param add The address to get the balance from
+    /// @return The balance handle (zero if uninitialized)
+    function balanceOf(address add) public view returns (gtUint64) {
+        return  balances[add];
     }
 
     function transfer(address _to, itUint64 calldata _it) public returns (gtBool) {
@@ -241,4 +278,22 @@ contract ShieldedToken {
     function decimals() public pure returns (uint8) {
         return _decimals;
     }
+
+    // Function to shield standard ERC20 tokens into private tokens
+    function shield(uint256 amount) public returns (bool) {
+        require(amount > 0, "Amount must be greater than 0");
+        uint256 privateAmount = amount / (10 ** (18 - decimals()));
+        require(privateAmount > 0, "Amount too small after decimal conversion");
+        require(underlying.transferFrom(msg.sender, address(this), amount), "Transfer failed");
+        gtUint64 balanceGt = _balanceOf(msg.sender);
+        gtUint64 newBalanceGt = MpcCore.add(balanceGt, MpcCore.setPublic64(uint64(privateAmount)));
+        balances[msg.sender] = newBalanceGt;
+        _totalSupply += privateAmount;
+        // Permit the contract and the user to use the new balance handle
+        MpcCore.permitThis(newBalanceGt);
+        MpcCore.permit(newBalanceGt, msg.sender);
+        emit Shield(msg.sender, amount);
+        return true;
+    }
+
 }
