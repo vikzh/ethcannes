@@ -1,24 +1,27 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { PROXY_SERVICE_URL } from "~~/config/contracts";
 
-const MPC_PROXY_URL = process.env.NEXT_PUBLIC_SODLABS_PROXY_URL || "https://proxy.bubble.sodalabs.net";
-
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json();
+    const body = await request.json();
 
-    const proxyResponse = await fetch(`${MPC_PROXY_URL}/onboard`, {
+    const response = await fetch(`${PROXY_SERVICE_URL}/onboard`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(body),
     });
 
-    const text = await proxyResponse.text();
-    return new Response(text, {
-      status: proxyResponse.status,
-      headers: { "Content-Type": proxyResponse.headers.get("content-type") || "application/json" },
-    });
-  } catch (error: any) {
-    console.error("/api/onboard proxy error", error);
-    return new Response(`Proxy error: ${error?.message || "unknown"}`, { status: 500 });
+    if (!response.ok) {
+      const errorText = await response.text();
+      return NextResponse.json({ error: `Onboarding failed: ${errorText}` }, { status: response.status });
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("Onboard proxy error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-} 
+}
