@@ -13,6 +13,14 @@ import { BlockieAvatar } from "~~/components/scaffold-eth";
 import { useInitializeNativeCurrencyPrice } from "~~/hooks/scaffold-eth";
 import { wagmiConfig } from "~~/services/web3/wagmiConfig";
 
+// Import the toolbar
+import { initToolbar } from '@stagewise/toolbar';
+
+// Define your toolbar configuration
+const stagewiseConfig = {
+  plugins: [],
+};
+
 const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
   useInitializeNativeCurrencyPrice();
 
@@ -43,6 +51,11 @@ export const ScaffoldEthAppWithProviders = ({ children }: { children: React.Reac
 
   useEffect(() => {
     setMounted(true);
+    
+    // Initialize Stagewise toolbar in development mode
+    if (process.env.NODE_ENV === 'development') {
+      initToolbar(stagewiseConfig);
+    }
   }, []);
 
   return (

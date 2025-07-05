@@ -34,6 +34,16 @@ export const usePrivateBalance = (tokenAddress: Address | undefined) => {
   const fetchEncryptedBalance = useCallback(async () => {
     if (!tokenAddress || !userAddress || !publicClient) return;
 
+    // Handle placeholder addresses gracefully
+    if (tokenAddress === "0x0000000000000000000000000000000000000000") {
+      setBalanceState(prev => ({
+        ...prev,
+        encrypted: null,
+        error: null,
+      }));
+      return;
+    }
+
     try {
       const contract = getContract({
         address: tokenAddress,
@@ -110,6 +120,14 @@ export const usePrivateBalance = (tokenAddress: Address | undefined) => {
   useEffect(() => {
     if (tokenAddress && userAddress) {
       fetchEncryptedBalance();
+    } else if (!userAddress) {
+      // Clear state when user is not connected
+      setBalanceState({
+        encrypted: null,
+        decrypted: null,
+        isDecrypting: false,
+        error: null,
+      });
     }
   }, [tokenAddress, userAddress, fetchEncryptedBalance]);
 

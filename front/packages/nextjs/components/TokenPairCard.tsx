@@ -182,7 +182,7 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
             )}
           </div>
           
-          {balanceError && (
+          {balanceError && privateTokenAddress !== "0x0000000000000000000000000000000000000000" && (
             <div className="mt-2 text-xs text-red-500">
               {balanceError}
             </div>
