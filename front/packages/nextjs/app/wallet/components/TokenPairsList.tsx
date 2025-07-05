@@ -37,6 +37,17 @@ const TokenPairsList: React.FC<Props> = ({
   const [unshieldAmount, setUnshieldAmount] = useState("");
   const [mintAmount, setMintAmount] = useState("");
 
+  const handleClosePanel = () => {
+    setBottomPanelType("hidden");
+    setActiveRowIndex(null);
+    setActiveNetworkId(null);
+    setAmount("");
+    setRecipient("");
+    setShieldAmount("");
+    setUnshieldAmount("");
+    setMintAmount("");
+  };
+
   const {
     approvingTokens,
     isTransferring,
@@ -50,7 +61,7 @@ const TokenPairsList: React.FC<Props> = ({
     shield,
     unshield,
     mint,
-  } = useWalletActions(updateTokenPairBalance, () => {});
+  } = useWalletActions(updateTokenPairBalance, handleClosePanel);
 
   const handleSetBottomPanel = (type: BottomPanelType, index: number, networkId: number) => {
     if (bottomPanelType === type && activeRowIndex === index && activeNetworkId === networkId) {
@@ -60,17 +71,6 @@ const TokenPairsList: React.FC<Props> = ({
       setActiveRowIndex(index);
       setActiveNetworkId(networkId);
     }
-  };
-
-  const handleClosePanel = () => {
-    setBottomPanelType("hidden");
-    setActiveRowIndex(null);
-    setActiveNetworkId(null);
-    setAmount("");
-    setRecipient("");
-    setShieldAmount("");
-    setUnshieldAmount("");
-    setMintAmount("");
   };
 
   const getCurrentNetworkData = () => networkTokenData[chainId];

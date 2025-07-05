@@ -10,7 +10,7 @@ import { notification } from "~~/utils/scaffold-eth";
 
 export const useWalletActions = (
   updateTokenPairBalance: (privateAddress: string, updates: Partial<any>) => void,
-  _updateNetworkData: (chainId: number) => void, // reserved for future use
+  onActionComplete: () => void = () => {},
 ) => {
   const { address } = useAccount();
 
@@ -48,6 +48,42 @@ export const useWalletActions = (
     }
   };
 
+  /**
+   * Helper to await a transaction, then poll for clear-token balance change and handle UI updates.
+   */
+  const handleTxWithClearBalanceChange = async (
+    tx: any,
+    clearContract: ethers.Contract,
+    prevBalance: string,
+    tokenPair: TokenPair,
+    waitingMsg: string,
+    completedMsg: string,
+    resetPrivateBalance = false,
+  ) => {
+    await tx.wait();
+    notification.success(`${completedMsg} transaction mined!`);
+
+    const waitingId = notification.info(waitingMsg, { duration: 0 });
+    const newBalance = await BlockchainService.pollForBalanceChange(
+      clearContract,
+      address as string,
+      prevBalance,
+      20,
+      5000,
+    );
+    if (waitingId) notification.remove(waitingId);
+
+    if (newBalance !== prevBalance) {
+      const updates: any = { clearTokenBalance: newBalance };
+      if (resetPrivateBalance) updates.privateTokenBalance = undefined;
+      updateTokenPairBalance(tokenPair.privateAddress, updates);
+      notification.success(`${completedMsg} completed!`, { icon: "🎉" });
+      onActionComplete();
+    } else {
+      notification.warning(`${completedMsg} submitted, but processing is taking longer than expected.`);
+    }
+  };
+
   const transferClear = async (tokenPair: TokenPair, amount: string, recipient: string) => {
     if (!amount || !recipient || !address) return;
     setIsTransferring(true);
@@ -59,11 +95,18 @@ export const useWalletActions = (
       const currentBalance = await contract.balanceOf(address);
       if (BigInt(currentBalance) < BigInt(amountInDecimals)) throw new Error("Insufficient balance");
       if (!ethers.isAddress(recipient)) throw new Error("Invalid recipient address");
+      const prevClearBalance = (await contract.balanceOf(address)).toString();
+
       const tx = await contract.transfer(recipient, amountInDecimals);
-      await tx.wait();
-      notification.success("Send successful!");
-      const newBalance = await contract.balanceOf(address);
-      updateTokenPairBalance(tokenPair.privateAddress, { clearTokenBalance: newBalance.toString() });
+      await handleTxWithClearBalanceChange(
+        tx,
+        contract,
+        prevClearBalance,
+        tokenPair,
+        "Waiting for balance update after transfer...",
+        "Transfer",
+        false,
+      );
     } catch (err: any) {
       console.error("Send error:", err);
       notification.error("Send failed: " + (err.message || "Unknown error"));
@@ -92,7 +135,12 @@ export const useWalletActions = (
         signature: signedMessage,
       });
       await tx.wait();
-      notification.success("Send successful!");
+      notification.success("Private transfer successful!");
+
+      // Reset cached private balance so user decrypts again for updated value
+      updateTokenPairBalance(tokenPair.privateAddress, { privateTokenBalance: undefined });
+
+      onActionComplete();
     } catch (err: any) {
       console.error("Send error:", err);
       notification.error("Send failed: " + (err.message || "Unknown error"));
@@ -127,11 +175,19 @@ export const useWalletActions = (
         return;
       }
       const privateContract = new ethers.Contract(tokenPair.privateAddress, PRIVATE_TOKEN_ABI, signer);
+      // Capture balance BEFORE submitting the transaction
+      const prevClearBalance = (await clearContract.balanceOf(address)).toString();
+
       const tx = await privateContract.shield(amountToShield);
-      await tx.wait();
-      notification.success("Shield successful!");
-      const newClearBalance = await clearContract.balanceOf(address);
-      updateTokenPairBalance(tokenPair.privateAddress, { clearTokenBalance: newClearBalance.toString() });
+      await handleTxWithClearBalanceChange(
+        tx,
+        clearContract,
+        prevClearBalance,
+        tokenPair,
+        "Waiting for MPC to process shield request...",
+        "Shield",
+        true,
+      );
     } catch (err: any) {
       console.error("Shield error:", err);
       setShieldError(err?.message || "Failed to shield tokens");
@@ -162,6 +218,7 @@ export const useWalletActions = (
       if (newBalance !== prevBalance) {
         updateTokenPairBalance(tokenPair.privateAddress, { clearTokenBalance: newBalance });
         notification.success("Unshield completed!", { icon: "🎉" });
+        onActionComplete();
       } else {
         notification.warning("Unshield request submitted, but MPC processing is taking longer than expected.");
       }
@@ -182,11 +239,20 @@ export const useWalletActions = (
       const signer = await provider.getSigner();
       const clearContract = new ethers.Contract(tokenPair.clearAddress, CLEAR_TOKEN_ABI, signer);
       const amountToMint = ethers.parseUnits(amount, tokenPair.data.clearTokenDecimals || 18);
+
+      // Balance before mint
+      const prevClearBalance = (await clearContract.balanceOf(address)).toString();
+
       const tx = await clearContract.mint(address, amountToMint);
-      await tx.wait();
-      const newBalance = await clearContract.balanceOf(address);
-      updateTokenPairBalance(tokenPair.privateAddress, { clearTokenBalance: newBalance.toString() });
-      notification.success("Mint successful!");
+      await handleTxWithClearBalanceChange(
+        tx,
+        clearContract,
+        prevClearBalance,
+        tokenPair,
+        "Waiting for balance update after mint...",
+        "Mint",
+        true,
+      );
     } catch (err: any) {
       console.error("Mint error:", err);
       notification.error("Failed to mint tokens");
