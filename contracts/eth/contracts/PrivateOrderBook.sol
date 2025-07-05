@@ -4,6 +4,7 @@ pragma solidity ^0.8.10;
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 uint256 constant PRECISION = 10 ** 6;
 
@@ -43,6 +44,9 @@ contract PrivateOrderBook is ReentrancyGuard, Pausable, Ownable {
     require(newOrder.fromToken != newOrder.toToken, "Cannot trade same token");
     require(newOrder.fromAmount > 0, "From amount must be greater than 0");
     require(newOrder.toAmount > 0, "To amount must be greater than 0");
+    
+    // Transfer maker tokens to this contract
+    IERC20(newOrder.fromToken).transferFrom(newOrder.maker, address(this), newOrder.fromAmount);
     
     newOrder.timestamp = block.timestamp;
     newOrder.isActive = true;
@@ -86,10 +90,12 @@ contract PrivateOrderBook is ReentrancyGuard, Pausable, Ownable {
     require(orders[orderId].isActive, "Order is not active");
     
     Order storage makerOrder = orders[orderId];
-    
     makerOrder.isActive = false;
     
-    // _transferTokens(makerOrder, takerOrder, taker);
+    // Transfer tokens from maker to taker
+    IERC20(makerOrder.fromToken).transferFrom(makerOrder.maker, taker, makerOrder.fromAmount);
+    // Transfer tokens from taker to maker
+    IERC20(takerOrder.fromToken).transferFrom(taker, makerOrder.maker, takerOrder.fromAmount);
     
     emit OrderExecuted(orderId, makerOrder.maker, taker);
   }
@@ -102,9 +108,10 @@ contract PrivateOrderBook is ReentrancyGuard, Pausable, Ownable {
     require(orderId < orders.length, "Invalid order ID");
     require(orders[orderId].isActive, "Order is not active");
     require(orders[orderId].maker == msg.sender, "Only maker can cancel order");
-    
+
     orders[orderId].isActive = false;
-    
+    IERC20(orders[orderId].fromToken).transfer(orders[orderId].maker, orders[orderId].fromAmount);
+
     emit OrderCancelled(orderId, msg.sender);
   }
 
