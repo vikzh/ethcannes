@@ -4,7 +4,6 @@ pragma solidity ^0.8.19;
 import "./MpcCore.sol";
 
 abstract contract DecryptionCaller {
-
     /// @notice Emitted when the decryption fails
     /// @param expected The expected size
     /// @param received The received size
@@ -32,10 +31,7 @@ abstract contract DecryptionCaller {
     /// @param handles The handles to decrypt
     /// @param callbackSelector The callback selector
     /// @return decryptID The ID of the decryption
-    function requestDecryption(
-        uint256[] memory handles,
-        bytes4 callbackSelector
-    ) internal returns (uint256 decryptID) {
+    function requestDecryption(uint256[] memory handles, bytes4 callbackSelector) internal returns (uint256 decryptID) {
         decryptID = decryptCounter;
         saveDecryptHandles(decryptID, handles);
         MpcCore.requestDecryption(decryptID, handles, callbackSelector);
@@ -51,7 +47,7 @@ abstract contract DecryptionCaller {
         if (decryptHandles[decryptID].length > 0) {
             revert DecryptionIDAlreadyExists(decryptID);
         }
-        decryptHandles[decryptID]= handles;
+        decryptHandles[decryptID] = handles;
     }
 
     /// @notice Get the handles of the decryption corresponding to the decryptID
@@ -68,7 +64,7 @@ abstract contract DecryptionCaller {
     /// @param decryptID The ID of the decryption
     /// @param size The size of the output
     /// @return True if the size of the output is the same as the size of the handles of the decryption corresponding to the decryptID, false otherwise
-    function checkCallbackHandles(uint256 decryptID, uint256 size) internal returns (bool){
+    function checkCallbackHandles(uint256 decryptID, uint256 size) internal returns (bool) {
         uint256[] memory expectedHandles = getDecryptHandles(decryptID);
         if (expectedHandles.length != size) {
             emit InvalidDecryptSize(expectedHandles.length, size);
@@ -77,6 +73,4 @@ abstract contract DecryptionCaller {
         emit SuccessDecryption(decryptID);
         return true;
     }
-
-
 }

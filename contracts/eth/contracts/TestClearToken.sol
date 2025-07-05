@@ -7,7 +7,7 @@ contract ClearToken is ERC20 {
     uint8 private _decimals = 18;
 
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
-        _mint(msg.sender, 1000000 * 10**_decimals);
+        _mint(msg.sender, 1000000 * 10 ** _decimals);
     }
 
     function mint(address account, uint256 amount) external {

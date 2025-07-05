@@ -1,5 +1,5 @@
-import {ethers} from "ethers";
-import {encrypt} from "soda-sdk";
+import { ethers } from 'ethers';
+import { encrypt } from 'soda-sdk';
 
 /**
  * Prepares a message specifically for ValidateCiphertext function by encrypting the plaintext
@@ -20,39 +20,39 @@ export function prepareMessageForBubble(
   encryptedInt: bigint;
   messageBytes: Uint8Array;
 } {
-    // Validate signerAddress (Ethereum address)
-    if (!ethers.isAddress(signerAddress)) {
-        throw new TypeError("Invalid signer address");
-    }
+  // Validate signerAddress (Ethereum address)
+  if (!ethers.isAddress(signerAddress)) {
+    throw new TypeError('Invalid signer address');
+  }
 
-    // Validate aesKey (16 bytes as hex string for ValidateCiphertext)
-    if (typeof aesKey !== "string" || aesKey.length !== 32) {
-        throw new TypeError("Invalid AES key length. Expected 16 bytes as hex string (32 characters).");
-    }
+  // Validate aesKey (16 bytes as hex string for ValidateCiphertext)
+  if (typeof aesKey !== 'string' || aesKey.length !== 32) {
+    throw new TypeError('Invalid AES key length. Expected 16 bytes as hex string (32 characters).');
+  }
 
-    // Validate contractAddress (Ethereum address)
-    if (typeof contractAddress !== "string" || !ethers.isAddress(contractAddress)) {
-        throw new TypeError("Invalid contract address");
-    }
+  // Validate contractAddress (Ethereum address)
+  if (typeof contractAddress !== 'string' || !ethers.isAddress(contractAddress)) {
+    throw new TypeError('Invalid contract address');
+  }
 
-    // Convert the plaintext to bytes
-    const plaintextBytes = Buffer.alloc(8); // Allocate a buffer of size 8 bytes
-    plaintextBytes.writeBigUInt64BE(plaintext); // Write the uint64 value to the buffer as little-endian
+  // Convert the plaintext to bytes
+  const plaintextBytes = Buffer.alloc(8); // Allocate a buffer of size 8 bytes
+  plaintextBytes.writeBigUInt64BE(plaintext); // Write the uint64 value to the buffer as little-endian
 
-    // Encrypt the plaintext using AES key
-    const { ciphertext, r } = encrypt(Buffer.from(aesKey, 'hex'), plaintextBytes);
-    const ct = Buffer.concat([ciphertext, r]);
+  // Encrypt the plaintext using AES key
+  const { ciphertext, r } = encrypt(Buffer.from(aesKey, 'hex'), plaintextBytes);
+  const ct = Buffer.concat([ciphertext, r]);
 
-    // Convert the ciphertext to BigInt
-    const encryptedInt = BigInt("0x" + ct.toString("hex"));
+  // Convert the ciphertext to BigInt
+  const encryptedInt = BigInt('0x' + ct.toString('hex'));
 
-    // Create the message bytes in the format expected by ValidateCiphertext:
-    // abi.encodePacked(tx.origin, msg.sender, ciphertext)
-    // Note: When calling ValidateCiphertext directly, tx.origin and msg.sender are usually the same
-    const messageBytes = ethers.solidityPacked(
-        ["address", "address", "uint256"],
-        [signerAddress, contractAddress, encryptedInt]
-    );
+  // Create the message bytes in the format expected by ValidateCiphertext:
+  // abi.encodePacked(tx.origin, msg.sender, ciphertext)
+  // Note: When calling ValidateCiphertext directly, tx.origin and msg.sender are usually the same
+  const messageBytes = ethers.solidityPacked(
+    ['address', 'address', 'uint256'],
+    [signerAddress, contractAddress, encryptedInt]
+  );
 
-    return { encryptedInt, messageBytes: ethers.getBytes(messageBytes) };
+  return { encryptedInt, messageBytes: ethers.getBytes(messageBytes) };
 }
