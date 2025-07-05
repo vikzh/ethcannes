@@ -16,6 +16,7 @@ interface ShieldFormProps {
   shieldError?: string;
   currentNetworkData: NetworkTokenData | undefined;
   currentTokenPair?: TokenPair;
+  isApproved: boolean;
   onShieldAmountChange: (value: string) => void;
   onApprove: () => void;
   onShield: () => void;
@@ -28,6 +29,7 @@ export const ShieldForm: React.FC<ShieldFormProps> = ({
   shieldError,
   currentNetworkData,
   currentTokenPair,
+  isApproved,
   onShieldAmountChange,
   onApprove,
   onShield,
@@ -83,30 +85,24 @@ export const ShieldForm: React.FC<ShieldFormProps> = ({
           </p>
         </div>
       )}
-      <div>
-        <div className="flex justify-between text-sm text-gray-600 mb-2">
-          <span>Available to Shield:</span>
-          <span>{getAvailableToShield()}</span>
+      {isApproved && (
+        <div>
+          <div className="flex justify-between text-sm text-gray-600 mb-2">
+            <span>Available to Shield:</span>
+            <span>{getAvailableToShield()}</span>
+          </div>
+          <input
+            type="number"
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-soda-blue-600 focus:border-transparent"
+            placeholder="Amount to shield"
+            value={shieldAmount}
+            onChange={e => onShieldAmountChange(e.target.value)}
+          />
         </div>
-        <input
-          type="number"
-          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-soda-blue-600 focus:border-transparent"
-          placeholder="Amount to shield"
-          value={shieldAmount}
-          onChange={e => onShieldAmountChange(e.target.value)}
-        />
-      </div>
+      )}
 
-      {isValidAmount ? (
-        shieldError && shieldError.includes("Insufficient allowance") ? (
-          <button
-            className="w-full py-3 bg-soda-blue-900 text-white rounded-xl hover:bg-soda-blue-800 transition-colors font-medium"
-            onClick={onApprove}
-            disabled={isApproving}
-          >
-            {isApproving ? "Approving..." : "Approve Tokens"}
-          </button>
-        ) : (
+      {isApproved ? (
+        isValidAmount ? (
           <button
             className="w-full py-3 bg-soda-blue-900 text-white rounded-xl hover:bg-soda-blue-800 transition-colors font-medium"
             onClick={handleShieldClick}
@@ -114,13 +110,21 @@ export const ShieldForm: React.FC<ShieldFormProps> = ({
           >
             {isShielding ? "Shielding..." : "Shield"}
           </button>
+        ) : (
+          <button
+            className="w-full py-3 bg-gray-300 text-gray-500 rounded-xl font-medium"
+            disabled
+          >
+            Enter amount to shield
+          </button>
         )
       ) : (
         <button
-          className="w-full py-3 bg-gray-300 text-gray-500 rounded-xl font-medium"
-          disabled
+          className="w-full py-3 bg-soda-blue-900 text-white rounded-xl hover:bg-soda-blue-800 transition-colors font-medium"
+          onClick={onApprove}
+          disabled={isApproving}
         >
-          Enter amount to shield
+          {isApproving ? "Approving..." : "Approve Tokens"}
         </button>
       )}
       

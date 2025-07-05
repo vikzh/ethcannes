@@ -116,6 +116,14 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
     );
   };
 
+  const [isOnboarded, setIsOnboarded] = React.useState<boolean>(() => !!getUserKeyFromStorage());
+
+  React.useEffect(() => {
+    const handler = () => setIsOnboarded(!!getUserKeyFromStorage());
+    window.addEventListener("onboarded", handler);
+    return () => window.removeEventListener("onboarded", handler);
+  }, []);
+
   return (
     <div className="flex flex-col md:flex-row items-stretch gap-4 mb-4">
       {/* Clear Token Card */}
@@ -330,124 +338,18 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
                   ).toFixed(2)
                 : "*****"}
             </span>
-            {/* Toggle visibility button */}
-            {getUserKeyFromStorage() && (
-              <button
-                type="button"
-                className="w-5 h-5 flex items-center justify-center hover:text-gray-700 transition-colors"
-                onClick={handleToggleBalanceVisibility}
-                disabled={isRefreshingBalance && pair.chainId === chainId}
-              >
-                {isRefreshingBalance && pair.chainId === chainId ? (
-                  <span className="loading loading-spinner loading-xs"></span>
-                ) : isBalanceHidden ? (
-                  // Eye (show)
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="w-4 h-4"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
-                ) : (
-                  // Eye with slash (hide)
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="w-4 h-4"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M3.98 8.223a10.477 10.477 0 00-1.514 3.777 1.012 1.012 0 000 .001C3.423 16.49 7.36 19.5 12 19.5c2.18 0 4.208-.67 5.874-1.816m2.106-2.106A10.476 10.476 0 0021 12.001v-.002M6.343 6.343A10.46 10.46 0 0112 4.5c4.638 0 8.573 3.007 9.963 7.178a1.012 1.012 0 010 .639m-6.6 2.14a3 3 0 01-4.244-4.244"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M3 3l18 18"
-                    />
-                  </svg>
-                )}
-              </button>
-            )}
-            <span>{pair.data.privateTokenSymbol ?? "Token"}</span>
-          </div>
-        </div>
-
-        {/* Actions */}
-        {!getUserKeyFromStorage() ? (
-          <button
-            className="px-3 py-1 bg-soda-blue-900 text-white rounded-full hover:bg-soda-blue-800 transition-colors text-sm mt-auto"
-            onClick={onOnboard}
-          >
-            Onboard
-          </button>
-        ) : (
-          <div className="flex flex-wrap gap-2 mt-auto">
-            <ActionButton
-              action="transfer-private"
-              title="Send"
-              isActive={
-                bottomPanelType === "transfer-private" &&
-                activeRowIndex === index &&
-                activeNetworkId === pair.chainId
-              }
-              onClick={() => {
-                if (pair.chainId !== chainId) {
-                  onNetworkSwitch(pair.chainId, "transfer-private", index);
-                } else {
-                  onSetBottomPanel("transfer-private", index, pair.chainId);
-                }
-              }}
-              icon={
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-3.5 h-3.5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25"
-                  />
-                </svg>
-              }
-            />
-
-            <ActionButton
-              action="unshield"
-              title="Unshield"
-              isActive={
-                bottomPanelType === "unshield" &&
-                activeRowIndex === index &&
-                activeNetworkId === pair.chainId
-              }
-              onClick={() => {
-                if (pair.chainId !== chainId) {
-                  onNetworkSwitch(pair.chainId, "unshield", index);
-                } else {
-                  onSetBottomPanel("unshield", index, pair.chainId);
-                }
-              }}
-              icon={
+            {/* Toggle visibility button – always rendered */}
+            <button
+              type="button"
+              className="w-5 h-5 flex items-center justify-center hover:text-gray-700 transition-colors disabled:opacity-50"
+              onClick={handleToggleBalanceVisibility}
+              disabled={!getUserKeyFromStorage() || (isRefreshingBalance && pair.chainId === chainId)}
+              title={getUserKeyFromStorage() ? undefined : "Onboard first to reveal"}
+            >
+              {isRefreshingBalance && pair.chainId === chainId ? (
+                <span className="loading loading-spinner loading-xs"></span>
+              ) : isBalanceHidden ? (
+                // Eye (show)
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
@@ -456,19 +358,116 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
                   stroke="currentColor"
                   className="w-4 h-4"
                 >
-                  {/* Shield outline - same as shield icon but without checkmark */}
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    d="M12 1.464A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.623 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
+                    d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
                   />
-                  {/* Diagonal slash */}
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m6 6 12 12" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
                 </svg>
-              }
-            />
+              ) : (
+                // Eye with slash (hide)
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-4 h-4"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3.98 8.223a10.477 10.477 0 00-1.514 3.777 1.012 1.012 0 000 .001C3.423 16.49 7.36 19.5 12 19.5c2.18 0 4.208-.67 5.874-1.816m2.106-2.106A10.476 10.476 0 0021 12.001v-.002M6.343 6.343A10.46 10.46 0 0112 4.5c4.638 0 8.573 3.007 9.963 7.178a1.012 1.012 0 010 .639m-6.6 2.14a3 3 0 01-4.244-4.244"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3 3l18 18"
+                  />
+                </svg>
+              )}
+            </button>
+            <span>{pair.data.privateTokenSymbol ?? "Token"}</span>
           </div>
-        )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-wrap gap-2 mt-auto">
+          <ActionButton
+            action="transfer-private"
+            title="Send"
+            isActive={
+              bottomPanelType === "transfer-private" &&
+              activeRowIndex === index &&
+              activeNetworkId === pair.chainId
+            }
+            onClick={() => {
+              if (pair.chainId !== chainId) {
+                onNetworkSwitch(pair.chainId, "transfer-private", index);
+              } else {
+                onSetBottomPanel("transfer-private", index, pair.chainId);
+              }
+            }}
+            icon={
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-3.5 h-3.5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25"
+                />
+              </svg>
+            }
+            disabled={!getUserKeyFromStorage()}
+          />
+
+          <ActionButton
+            action="unshield"
+            title="Unshield"
+            isActive={
+              bottomPanelType === "unshield" &&
+              activeRowIndex === index &&
+              activeNetworkId === pair.chainId
+            }
+            onClick={() => {
+              if (pair.chainId !== chainId) {
+                onNetworkSwitch(pair.chainId, "unshield", index);
+              } else {
+                onSetBottomPanel("unshield", index, pair.chainId);
+              }
+            }}
+            icon={
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-4 h-4"
+              >
+                {/* Shield outline - same as shield icon but without checkmark */}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 1.464A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.623 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
+                />
+                {/* Diagonal slash */}
+                <path strokeLinecap="round" strokeLinejoin="round" d="m6 6 12 12" />
+              </svg>
+            }
+          />
+        </div>
       </div>
     </div>
   );

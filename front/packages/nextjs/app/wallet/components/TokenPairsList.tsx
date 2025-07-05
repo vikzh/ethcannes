@@ -61,6 +61,8 @@ const TokenPairsList: React.FC<Props> = ({
     shield,
     unshield,
     mint,
+    isTokenApproved,
+    refreshAllowance,
   } = useWalletActions(updateTokenPairBalance, handleClosePanel);
 
   const handleSetBottomPanel = (type: BottomPanelType, index: number, networkId: number) => {
@@ -126,9 +128,12 @@ const TokenPairsList: React.FC<Props> = ({
               shieldAmount={shieldAmount}
               isShielding={isShielding}
               isApproving={approvingTokens.has(pair.privateAddress)}
+              isApproved={isTokenApproved(pair.privateAddress)}
               shieldError={shieldError}
               onShieldAmountChange={setShieldAmount}
-              onApprove={() => handleApprove(pair)}
+              onApprove={() => {
+                handleApprove(pair).then(() => refreshAllowance(pair));
+              }}
               onShield={() => shield(pair, shieldAmount)}
               unshieldAmount={unshieldAmount}
               isUnshielding={isUnshielding}
