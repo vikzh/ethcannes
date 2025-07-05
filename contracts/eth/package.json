@@ -7,7 +7,7 @@
     "node-fetch": "^3.3.2"
   },
   "scripts": {
-    "test": "hardhat test",
+    "test": "hardhat test test/shieldedToken.test.ts --network \"sepolia-base\"",
     "compile": "hardhat compile",
     "format": "prettier --write ."
   },
