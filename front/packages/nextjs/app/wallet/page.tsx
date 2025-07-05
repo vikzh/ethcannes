@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import Loading from "./components/Loading";
 import PortfolioHeader from "./components/PortfolioHeader";
 import TokenPairsList from "./components/TokenPairsList";
-import { NetworkSwitchModal } from "../../components/wallet";
 import { notification } from "~~/utils/scaffold-eth";
 import { useWalletData } from "../../hooks/wallet/useWalletData";
 import { getNetworkDisplayInfo } from "../../utils/wallet/networkUI";
@@ -95,13 +94,6 @@ const WalletPage = () => {
         {onboardError && <div className="text-red-500 text-center">{onboardError}</div>}
       </div>
 
-      <NetworkSwitchModal
-        showModal={showNetworkModal}
-        pendingNetworkSwitch={pendingNetworkSwitch}
-        isSwitchingNetwork={isSwitchingNetwork}
-        onConfirm={confirmNetworkSwitch}
-        onCancel={cancelNetworkSwitch}
-      />
     </div>
   );
 };

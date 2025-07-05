@@ -1,7 +1,7 @@
 import React from "react";
 import { ethers } from "ethers";
 import { getNetworkDisplayInfo } from "../../config/network";
-import { formatPrivateBalance, getUserKeyFromStorage } from "../../utils/soda/cryptoUtils";
+import { formatPrivateBalance, getUserKeyFromStorage } from "../../utils/enc/cryptoUtils";
 import { TokenPair } from "../../hooks/mpc";
 import { BottomPanelType } from "./ActionPanel";
 
