@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ethers } from "ethers";
 import { PRIVATE_TOKEN_ABI, getContractAddresses } from "../../config/contracts";
-import { decryptBalanceViaProxy, getUserKeyFromStorage } from "../../utils/soda/cryptoUtils";
+import { decryptBalanceViaProxy, getUserKeyFromStorage } from "../../utils/enc/cryptoUtils";
 import { notification } from "~~/utils/scaffold-eth";
 import { NetworkTokenData } from "./useMultiNetworkTokenData";
 

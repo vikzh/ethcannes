@@ -3,8 +3,8 @@ import { ethers } from "ethers";
 import { useAccount } from "wagmi";
 import { TokenPair } from "../mpc";
 import { CLEAR_TOKEN_ABI, PRIVATE_TOKEN_ABI } from "../../config/contracts";
-import { prepareMessageForBubble } from "../../utils/soda/signMessage";
-import { getUserKeyFromStorage } from "../../utils/soda/cryptoUtils";
+import { prepareMessageForBubble } from "../../utils/enc/signMessage";
+import { getUserKeyFromStorage } from "../../utils/enc/cryptoUtils";
 import { BlockchainService } from "../../services/wallet";
 import { notification } from "~~/utils/scaffold-eth";
 

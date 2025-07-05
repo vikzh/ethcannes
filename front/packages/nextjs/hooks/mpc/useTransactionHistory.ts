@@ -3,7 +3,7 @@ import { useAccount, useChainId } from "wagmi";
 import { ethers } from "ethers";
 import { decryptUint } from "soda-sdk";
 import { getSubgraphUrl, getRpcUrl } from "../../config/network";
-import { getUserKeyFromStorage } from "../../utils/soda/cryptoUtils";
+import { getUserKeyFromStorage } from "../../utils/enc/cryptoUtils";
 
 // Interface for unified transaction data
 export interface HistoryTransaction {
