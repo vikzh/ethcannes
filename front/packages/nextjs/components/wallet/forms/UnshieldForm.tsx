@@ -1,4 +1,5 @@
 import React from "react";
+import TransactionAnimation from "../../animations/TransactionAnimation";
 import { formatPrivateBalance, getUserKeyFromStorage } from "../../../utils/enc/cryptoUtils";
 import { NetworkTokenData, TokenPair } from "../../../hooks/mpc";
 
@@ -37,6 +38,7 @@ export const UnshieldForm: React.FC<UnshieldFormProps> = ({
 
   return (
     <div className="space-y-4">
+      <TransactionAnimation isActive={isUnshielding} />
       <div>
         <div className="flex justify-between text-sm text-gray-600 mb-2">
           <span>Available to Unshield:</span>

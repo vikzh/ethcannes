@@ -1,13 +1,7 @@
-import React, { useState } from "react";
+import React from "react";
 import { ethers } from "ethers";
 import { NetworkTokenData, TokenPair } from "../../../hooks/mpc";
-import dynamic from 'next/dynamic';
-
-// Dynamically import the animation component with no SSR
-const EncryptionAnimation = dynamic(
-  () => import('../../animations/EncryptionAnimation'),
-  { ssr: false }
-);
+import TransactionAnimation from "../../animations/TransactionAnimation";
 
 interface ShieldFormProps {
   shieldAmount: string;
@@ -48,43 +42,17 @@ export const ShieldForm: React.FC<ShieldFormProps> = ({
 
   const isValidAmount = shieldAmount && Number(shieldAmount) > 0;
 
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [transactionHash, setTransactionHash] = useState<string | null>(null);
-
   const handleShieldClick = async () => {
     try {
-      setIsProcessing(true);
-      setTransactionHash(null);
-      
-      // Call the onShield function and wait for it to complete
       await onShield();
-      
-      // If you have access to the transaction hash, you can set it here
-      // For example: setTransactionHash(tx.hash);
-      
     } catch (error) {
-      console.error('Transaction failed:', error);
-    } finally {
-      // Optionally, you might want to keep showing the animation for a bit
-      // or until you get a confirmation
-      setTimeout(() => {
-        setIsProcessing(false);
-      }, 2000); // Show for at least 2 seconds
+      console.error("Shield transaction failed:", error);
     }
   };
 
   return (
     <div className="space-y-4">
-      {(isShielding || isProcessing) && (
-        <div className="mt-4 transition-all duration-300">
-          <EncryptionAnimation isActive={isShielding || isProcessing} />
-          <p className="text-center text-gray-600 text-xs mt-2">
-            {transactionHash 
-              ? `Processing transaction... ${transactionHash.slice(0, 8)}...${transactionHash.slice(-6)}`
-              : 'Confirming transaction...'}
-          </p>
-        </div>
-      )}
+      <TransactionAnimation isActive={isShielding} />
       {isApproved && (
         <div>
           <div className="flex justify-between text-sm text-gray-600 mb-2">
