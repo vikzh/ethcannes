@@ -110,6 +110,7 @@ const TokenPairsList: React.FC<Props> = ({
             onNetworkSwitch={onNetworkSwitch}
             onSetBottomPanel={handleSetBottomPanel}
             onPrivateBalanceDecrypt={handlePrivateBalanceDecrypt}
+            onPrivateBalanceClear={privateAddress => updateTokenPairBalance(privateAddress, { privateTokenBalance: undefined })}
             onOnboard={handleOnboardClick}
           />
 

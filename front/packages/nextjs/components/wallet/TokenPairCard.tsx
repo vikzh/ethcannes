@@ -24,6 +24,7 @@ interface TokenPairCardProps {
   onNetworkSwitch: (targetChainId: number, action: string, index: number) => void;
   onSetBottomPanel: (type: BottomPanelType, index: number, networkId: number) => void;
   onPrivateBalanceDecrypt: (chainId: number, privateTokenAddress?: string) => void;
+  onPrivateBalanceClear: (privateTokenAddress: string) => void;
   onOnboard: () => void;
 }
 
@@ -40,6 +41,7 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
   onNetworkSwitch,
   onSetBottomPanel,
   onPrivateBalanceDecrypt,
+  onPrivateBalanceClear,
   onOnboard,
 }) => {
   const networkInfo = getNetworkDisplayInfo(pair.chainId);
@@ -71,8 +73,10 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
         }
       }
     } else {
-      // Hide the balance
+      // Hide the balance and clear the cached decrypted value so next reveal triggers signature again
       setIsBalanceHidden(true);
+      // Inform parent to remove cached balance
+      onPrivateBalanceClear(pair.privateAddress);
     }
   };
 
