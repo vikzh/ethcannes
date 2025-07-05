@@ -126,7 +126,7 @@ const config: HardhatUserConfig = {
       },
     },
     baseSepolia: {
-      url: "https://sepolia.base.org",
+      url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
       accounts: [deployerPrivateKey],
       verify: {
         etherscan: {
