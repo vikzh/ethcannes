@@ -40,6 +40,8 @@ contract ShieldedToken {
     string private _name;
     /// @notice The symbol of the token
     string private _symbol;
+    /// @notice The total supply of tokens
+    uint256 private _totalSupply;
 
     /// @notice Emitted when tokens are transferred
     /// @param _from The address of the sender
@@ -72,6 +74,23 @@ contract ShieldedToken {
         zero = MpcCore.setPublic64(0);
         // Permit the contract to use the zero handle
         MpcCore.permitThis(zero);
+    }
+
+    /// @notice Returns the name of the token
+    /// @return The token name
+    function name() public view returns (string memory) {
+        return _name;
+    }
+    /// @notice Returns the symbol of the token
+    /// @return The token symbol
+    function symbol() public view returns (string memory) {
+        return _symbol;
+    }
+
+    /// @notice Returns the total supply of tokens
+    /// @return The total supply
+    function totalSupply() public view returns (uint256) {
+        return _totalSupply;
     }
 
     function transfer(address _to, itUint64 calldata _it) public returns (gtBool) {
