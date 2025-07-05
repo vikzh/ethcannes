@@ -6,7 +6,6 @@ import { useWalletActions } from "../../../hooks/wallet/useWalletActions";
 
 interface Props {
   chainId: number;
-  testUsdPrice: number;
   filteredTokenPairs: TokenPair[];
   isRefreshingBalance: boolean;
   clickedButton: { action: string; networkId: number; index: number } | null;
@@ -19,7 +18,6 @@ interface Props {
 
 const TokenPairsList: React.FC<Props> = ({
   chainId,
-  testUsdPrice,
   filteredTokenPairs,
   isRefreshingBalance,
   clickedButton,
@@ -39,6 +37,17 @@ const TokenPairsList: React.FC<Props> = ({
   const [unshieldAmount, setUnshieldAmount] = useState("");
   const [mintAmount, setMintAmount] = useState("");
 
+  const handleClosePanel = () => {
+    setBottomPanelType("hidden");
+    setActiveRowIndex(null);
+    setActiveNetworkId(null);
+    setAmount("");
+    setRecipient("");
+    setShieldAmount("");
+    setUnshieldAmount("");
+    setMintAmount("");
+  };
+
   const {
     approvingTokens,
     isTransferring,
@@ -52,7 +61,7 @@ const TokenPairsList: React.FC<Props> = ({
     shield,
     unshield,
     mint,
-  } = useWalletActions(updateTokenPairBalance, () => {});
+  } = useWalletActions(updateTokenPairBalance, handleClosePanel);
 
   const handleSetBottomPanel = (type: BottomPanelType, index: number, networkId: number) => {
     if (bottomPanelType === type && activeRowIndex === index && activeNetworkId === networkId) {
@@ -62,17 +71,6 @@ const TokenPairsList: React.FC<Props> = ({
       setActiveRowIndex(index);
       setActiveNetworkId(networkId);
     }
-  };
-
-  const handleClosePanel = () => {
-    setBottomPanelType("hidden");
-    setActiveRowIndex(null);
-    setActiveNetworkId(null);
-    setAmount("");
-    setRecipient("");
-    setShieldAmount("");
-    setUnshieldAmount("");
-    setMintAmount("");
   };
 
   const getCurrentNetworkData = () => networkTokenData[chainId];
@@ -100,7 +98,6 @@ const TokenPairsList: React.FC<Props> = ({
           <TokenPairCard
             pair={pair}
             index={index}
-            testUsdPrice={testUsdPrice}
             chainId={chainId}
             bottomPanelType={bottomPanelType}
             activeRowIndex={activeRowIndex}
@@ -110,6 +107,7 @@ const TokenPairsList: React.FC<Props> = ({
             onNetworkSwitch={onNetworkSwitch}
             onSetBottomPanel={handleSetBottomPanel}
             onPrivateBalanceDecrypt={handlePrivateBalanceDecrypt}
+            onPrivateBalanceClear={privateAddress => updateTokenPairBalance(privateAddress, { privateTokenBalance: undefined })}
             onOnboard={handleOnboardClick}
           />
 

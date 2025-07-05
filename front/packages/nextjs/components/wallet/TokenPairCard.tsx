@@ -1,14 +1,13 @@
 import React from "react";
 import { ethers } from "ethers";
 import { getNetworkDisplayInfo } from "../../config/network";
-import { formatPrivateBalance, getUserKeyFromStorage } from "../../utils/enc/cryptoUtils";
+import { getUserKeyFromStorage } from "../../utils/enc/cryptoUtils";
 import { TokenPair } from "../../hooks/mpc";
 import { BottomPanelType } from "./ActionPanel";
 
 interface TokenPairCardProps {
   pair: TokenPair;
   index: number;
-  testUsdPrice: number;
   chainId: number;
   
   // Panel state
@@ -24,13 +23,13 @@ interface TokenPairCardProps {
   onNetworkSwitch: (targetChainId: number, action: string, index: number) => void;
   onSetBottomPanel: (type: BottomPanelType, index: number, networkId: number) => void;
   onPrivateBalanceDecrypt: (chainId: number, privateTokenAddress?: string) => void;
+  onPrivateBalanceClear: (privateTokenAddress: string) => void;
   onOnboard: () => void;
 }
 
 export const TokenPairCard: React.FC<TokenPairCardProps> = ({
   pair,
   index,
-  testUsdPrice,
   chainId,
   bottomPanelType,
   activeRowIndex,
@@ -40,6 +39,7 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
   onNetworkSwitch,
   onSetBottomPanel,
   onPrivateBalanceDecrypt,
+  onPrivateBalanceClear,
   onOnboard,
 }) => {
   const networkInfo = getNetworkDisplayInfo(pair.chainId);
@@ -71,8 +71,10 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
         }
       }
     } else {
-      // Hide the balance
+      // Hide the balance and clear the cached decrypted value so next reveal triggers signature again
       setIsBalanceHidden(true);
+      // Inform parent to remove cached balance
+      onPrivateBalanceClear(pair.privateAddress);
     }
   };
 
@@ -148,7 +150,7 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
                       pair.clearTokenBalance,
                       pair.data.clearTokenDecimals,
                     ),
-                  ) * testUsdPrice
+                  )
                 ).toFixed(2)
               : "0.00"}
           </div>
@@ -307,11 +309,11 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
               ? "$" +
                 (
                   parseFloat(
-                    formatPrivateBalance(
+                    ethers.formatUnits(
                       pair.privateTokenBalance,
                       pair.data.privateTokenDecimals,
                     ),
-                  ) * testUsdPrice
+                  )
                 ).toFixed(2)
               : "0.00"}
           </div>
@@ -320,10 +322,12 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
               {isBalanceHidden || !getUserKeyFromStorage() || pair.chainId !== chainId
                 ? "*****"
                 : pair.data.privateTokenDecimals !== null && pair.privateTokenBalance
-                ? formatPrivateBalance(
-                    pair.privateTokenBalance,
-                    pair.data.privateTokenDecimals,
-                  )
+                ? parseFloat(
+                    ethers.formatUnits(
+                      pair.privateTokenBalance,
+                      pair.data.privateTokenDecimals,
+                    ),
+                  ).toFixed(2)
                 : "*****"}
             </span>
             {/* Toggle visibility button */}

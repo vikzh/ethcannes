@@ -89,7 +89,7 @@ export const useTokenPairs = (
       // All networks now use subgraph data
       try {
         const subgraphTokens = await BlockchainService.fetchTokensFromSubgraph(networkId);
-        
+
         if (subgraphTokens.length > 0) {
           // Create pairs with comprehensive metadata
           for (const token of subgraphTokens) {
@@ -111,7 +111,7 @@ export const useTokenPairs = (
               // Private token = custom wrapper (subgraph metadata)
               privateTokenName: token.name, // Use actual token name from subgraph
               privateTokenSymbol: token.symbol, // Use actual token symbol from subgraph
-              privateTokenDecimals: 5, // Private tokens typically use 5 decimals
+              privateTokenDecimals: 5, // mcp limitation
             };
 
             const finalPair = {
