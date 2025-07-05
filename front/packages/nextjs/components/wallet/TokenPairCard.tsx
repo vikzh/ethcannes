@@ -44,6 +44,38 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
 }) => {
   const networkInfo = getNetworkDisplayInfo(pair.chainId);
 
+  // Local state to manage visibility of the private token balance
+  const [isBalanceHidden, setIsBalanceHidden] = React.useState<boolean>(
+    !pair.privateTokenBalance,
+  );
+
+  // When a decrypted balance arrives through state updates, automatically reveal it
+  React.useEffect(() => {
+    if (pair.privateTokenBalance && isBalanceHidden) {
+      setIsBalanceHidden(false);
+    }
+  }, [pair.privateTokenBalance]);
+
+  const handleToggleBalanceVisibility = () => {
+    if (isBalanceHidden) {
+      // Balance is currently hidden – attempt to reveal
+      if (pair.privateTokenBalance) {
+        // Already decrypted – just show it
+        setIsBalanceHidden(false);
+      } else {
+        // Need to decrypt first – reuse existing decrypt logic
+        if (pair.chainId !== chainId) {
+          onNetworkSwitch(pair.chainId, "decrypt", index);
+        } else {
+          onPrivateBalanceDecrypt(pair.chainId, pair.privateAddress);
+        }
+      }
+    } else {
+      // Hide the balance
+      setIsBalanceHidden(true);
+    }
+  };
+
   // Action button component
   const ActionButton: React.FC<{
     action: string;
@@ -53,19 +85,20 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
     isActive?: boolean;
     onClick: () => void;
   }> = ({ action, icon, title, disabled = false, isActive = false, onClick }) => {
+
     const isLoading = 
       (action === "decrypt" && (isRefreshingBalance && pair.chainId === chainId)) ||
       (clickedButton?.action === action && clickedButton?.networkId === pair.chainId && clickedButton?.index === index);
 
     return (
       <button
-        className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-          isActive
-            ? "bg-soda-blue-200 border-2 border-soda-blue-600"
+        className={`flex items-center gap-1 md:gap-2 text-xs md:text-sm font-medium rounded-full px-2.5 md:px-3 py-1 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-soda-blue-600
+          ${isActive
+            ? "bg-soda-blue-600 text-white"
             : pair.chainId === chainId
-            ? "bg-gray-100 hover:bg-gray-200"
-            : "bg-gray-200 hover:bg-gray-300 text-gray-600"
-        }`}
+            ? "bg-gray-100 hover:bg-gray-200 text-gray-800"
+            : "bg-gray-200 hover:bg-gray-300 text-gray-600"}
+          ${disabled || isLoading ? "opacity-60 cursor-not-allowed" : ""}`}
         onClick={onClick}
         disabled={disabled || isLoading}
         title={pair.chainId === chainId ? title : `Switch to ${networkInfo?.name} to ${title}`}
@@ -75,6 +108,8 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
         ) : (
           icon
         )}
+        {/* Show label on medium+ screens to keep compact on mobile */}
+        <span className="hidden md:inline-block whitespace-nowrap">{title}</span>
       </button>
     );
   };
@@ -128,7 +163,7 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2 mt-auto">
+        <div className="flex flex-wrap gap-2 mt-auto">
           <ActionButton
             action="transfer-clear"
             title="Send"
@@ -266,9 +301,7 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
         {/* Balance */}
         <div>
           <div className="font-semibold text-gray-900">
-            {!getUserKeyFromStorage() ||
-            !pair.privateTokenBalance ||
-            pair.chainId !== chainId
+            {isBalanceHidden || !getUserKeyFromStorage() || pair.chainId !== chainId
               ? "*****"
               : pair.privateTokenBalance && pair.data.privateTokenDecimals !== null
               ? "$" +
@@ -280,20 +313,75 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
                     ),
                   ) * testUsdPrice
                 ).toFixed(2)
-              : "$0.00"}
+              : "0.00"}
           </div>
-          <div className="text-sm text-gray-500">
-            {!getUserKeyFromStorage() ||
-            !pair.privateTokenBalance ||
-            pair.chainId !== chainId
-              ? "*****"
-              : pair.data.privateTokenDecimals !== null
-              ? formatPrivateBalance(
-                  pair.privateTokenBalance,
-                  pair.data.privateTokenDecimals,
-                )
-              : "*****"}{" "}
-            {pair.data.privateTokenSymbol ?? "Token"}
+          <div className="text-sm text-gray-500 flex items-center gap-2">
+            <span>
+              {isBalanceHidden || !getUserKeyFromStorage() || pair.chainId !== chainId
+                ? "*****"
+                : pair.data.privateTokenDecimals !== null && pair.privateTokenBalance
+                ? formatPrivateBalance(
+                    pair.privateTokenBalance,
+                    pair.data.privateTokenDecimals,
+                  )
+                : "*****"}
+            </span>
+            {/* Toggle visibility button */}
+            {getUserKeyFromStorage() && (
+              <button
+                type="button"
+                className="w-5 h-5 flex items-center justify-center hover:text-gray-700 transition-colors"
+                onClick={handleToggleBalanceVisibility}
+                disabled={isRefreshingBalance && pair.chainId === chainId}
+              >
+                {isRefreshingBalance && pair.chainId === chainId ? (
+                  <span className="loading loading-spinner loading-xs"></span>
+                ) : isBalanceHidden ? (
+                  // Eye (show)
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-4 h-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                ) : (
+                  // Eye with slash (hide)
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-4 h-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3.98 8.223a10.477 10.477 0 00-1.514 3.777 1.012 1.012 0 000 .001C3.423 16.49 7.36 19.5 12 19.5c2.18 0 4.208-.67 5.874-1.816m2.106-2.106A10.476 10.476 0 0021 12.001v-.002M6.343 6.343A10.46 10.46 0 0112 4.5c4.638 0 8.573 3.007 9.963 7.178a1.012 1.012 0 010 .639m-6.6 2.14a3 3 0 01-4.244-4.244"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3 3l18 18"
+                    />
+                  </svg>
+                )}
+              </button>
+            )}
+            <span>{pair.data.privateTokenSymbol ?? "Token"}</span>
           </div>
         </div>
 
@@ -306,7 +394,7 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
             Onboard
           </button>
         ) : (
-          <div className="flex gap-2 mt-auto">
+          <div className="flex flex-wrap gap-2 mt-auto">
             <ActionButton
               action="transfer-private"
               title="Send"
@@ -372,39 +460,6 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
                   />
                   {/* Diagonal slash */}
                   <path strokeLinecap="round" strokeLinejoin="round" d="m6 6 12 12" />
-                </svg>
-              }
-            />
-
-            <ActionButton
-              action="decrypt"
-              title="Decrypt balance"
-              onClick={() => {
-                if (pair.chainId !== chainId) {
-                  onNetworkSwitch(pair.chainId, "decrypt", index);
-                } else {
-                  onPrivateBalanceDecrypt(pair.chainId, pair.privateAddress);
-                }
-              }}
-              icon={
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-4 h-4"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
                 </svg>
               }
             />
