@@ -21,7 +21,7 @@ export const NETWORK_CONFIGS = {
         decimals: 18,
       },
       EXPLORER_URL: "https://sepolia.basescan.org",
-      SUBGRAPH_URL: "https://subgraphs.sodalabs.net/subgraphs/name/sodawallet-subgraph-base",
+      SUBGRAPH_URL: "https://subgraphs.sodalabs.net/subgraphs/name/mosaic-subgraph-base",
     },
   } as const;
   
@@ -74,7 +74,7 @@ export const NETWORK_CONFIGS = {
       
       // For development, support local subgraph
       if (typeof window !== "undefined" && window.location.hostname === "localhost") {
-        return networkConfig.SUBGRAPH_URL || "http://localhost:8000/subgraphs/name/sodawallet-subgraph";
+        return networkConfig.SUBGRAPH_URL || "http://localhost:8000/subgraphs/name/mosaic-subgraph-base";
       }
     }
     
