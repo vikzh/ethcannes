@@ -1,5 +1,7 @@
 node_modules
 .env
+.editorconfig
+.vscode
 
 # Hardhat files
 /cache
