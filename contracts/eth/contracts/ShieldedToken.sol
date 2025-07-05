@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "./soda/DecryptionCaller.sol";
 import "./soda/MpcCore.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -19,7 +20,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  * - Reentrancy protection
  * - Ownership controls
  */
-contract ShieldedToken {
+contract ShieldedToken is DecryptionCaller{
     /// @dev This is stored as an immutable to save gas on repeated zero checks
     gtUint64 public immutable zero;
 
@@ -35,6 +36,12 @@ contract ShieldedToken {
     mapping(address => mapping(address => gtUint64)) private allowances;
     address public owner;
     IERC20 public underlying;
+
+    // Storage for unshield requests
+    struct UnshieldRequest {
+        address user;
+    }
+    mapping(uint256 => UnshieldRequest) private unshieldRequests;
 
     /// @notice The name of the token
     string private _name;
@@ -64,6 +71,9 @@ contract ShieldedToken {
     event Approval(address indexed _owner, address indexed _spender);
 
     event Shield(address indexed from, uint256 amount);
+    event Unshield(address indexed to, uint256 amount);
+    event UnshieldRequested(address indexed to, uint256 amount);
+    event UnshieldFailed(address indexed to, uint256 amount);
 
     /**
      * @dev Constructor that sets up the initial token configuration
@@ -294,6 +304,61 @@ contract ShieldedToken {
         MpcCore.permit(newBalanceGt, msg.sender);
         emit Shield(msg.sender, amount);
         return true;
+    }
+
+    // Function to unshield private tokens back to standard ERC20 tokens
+    function unshield(uint256 privateAmount) public returns (bool) {
+       require(privateAmount > 0, "Amount must be greater than 0");
+       gtUint64 balanceGt = _balanceOf(msg.sender);
+       gtUint64 amountGt = MpcCore.setPublic64(uint64(privateAmount));
+
+       (, gtUint64 newBalanceGt) = MpcCore.checkedSubWithOverflowBit(balanceGt, amountGt);
+       (gtBool overflowBit64, gtUint64 amountToUnshieldGt) = MpcCore.checkedSubWithOverflowBit(balanceGt, newBalanceGt);
+       MpcCore.permitThis(amountToUnshieldGt);
+       MpcCore.permitThis(newBalanceGt);
+       MpcCore.permit(newBalanceGt, msg.sender);
+       balances[msg.sender] = newBalanceGt;
+
+       // user balance = 10, want to  unshield 3. checkedSubWithOverflowBit(10, 3) = 7, amount to unshield = bal before 10 sub new balance 7 = 3
+       // user balance = 5, want to unshield 7. checkedSubWithOverflowBit(5, 7) = 5, amount to unshield = bal before 5 sub new balance 5 = 0
+
+       // Create array for decryption request
+       uint256[] memory handles = new uint256[](2);
+       handles[0] = gtBool.unwrap(overflowBit64);
+       handles[1] = gtUint64.unwrap(amountToUnshieldGt);
+
+       // Store the request details
+       unshieldRequests[decryptCounter] = UnshieldRequest({
+           user: msg.sender
+       });
+
+       // Request decryption
+       requestDecryption(handles, this.callbackUnshield.selector);
+
+       emit UnshieldRequested(msg.sender, privateAmount);
+       return true;
+    }
+
+    function callbackUnshield(uint256 decryptID, bytes[] calldata output, bytes calldata signature) public {
+        require(checkCallbackHandles(decryptID, output.length), "checkSubOverflowResults: Invalid callback parameters");
+
+        UnshieldRequest storage request = unshieldRequests[decryptID];
+        require(request.user != address(0), "Invalid request ID");
+
+        bool firstOverflowBit = abi.decode(output[0], (bool));
+        uint64 amountToUnshield = abi.decode(output[1], (uint64));
+        if (amountToUnshield > 0) {
+            _totalSupply -= amountToUnshield;
+            // Convert private amount (5 decimals) to underlying amount (18 decimals)
+            uint256 underlyingAmount = amountToUnshield * (10 ** (18 - decimals()));
+            require(underlying.transfer(request.user, underlyingAmount), "Transfer failed");
+            emit Unshield(request.user, underlyingAmount);
+        } else {
+            emit UnshieldFailed(request.user, amountToUnshield);
+        }
+
+        // Clean up the request
+        delete unshieldRequests[decryptID];
     }
 
 }
