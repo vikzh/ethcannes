@@ -23,6 +23,10 @@ contract ShieldedToken {
     /// @dev This is stored as an immutable to save gas on repeated zero checks
     gtUint64 public immutable zero;
 
+    /// @notice The number of decimal places for token amounts
+    /// @dev Fixed at 5 decimals, allowing for precision up to 0.00001 tokens
+    uint8 private immutable _decimals = 5;
+
     /// @notice Mapping of encrypted token balances for each address
     /// @dev The balance is stored as a handle that requires encryption and decryption under the user's secret key to get the actual value
     mapping(address => gtUint64) private balances;
@@ -234,10 +238,9 @@ contract ShieldedToken {
         MpcCore.permit(_value, _owner);
     }
     
-    /**
-     * @dev Returns the number of decimals used to get its user representation
-     */
-    function decimals() public view virtual returns (uint8) {
-        return 5;
+    /// @notice Returns the number of decimals used to get its user representation
+    /// @return The number of decimals
+    function decimals() public view returns (uint8) {
+        return _decimals;
     }
 }
