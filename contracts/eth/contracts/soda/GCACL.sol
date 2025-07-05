@@ -9,7 +9,6 @@ import {GCExtendedOperationsAddress} from "./GCHandlerAddress.sol";
 ///         By defining and enforcing these permissions, the ACL ensures that encrypted data remains secure while still being usable
 ///         within authorized contexts.
 contract GCACL {
-   
     /// @notice         Returned if the sender address is not permitted for permit operations.
     /// @param handle   Handle.
     /// @param sender   Sender address.
@@ -23,12 +22,10 @@ contract GCACL {
 
     /// @notice Mapping of handles to accounts to check if they are permitted.
     mapping(uint256 handle => mapping(address account => bool isPermitted)) persistedPermitted;
-    
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-    }
-    
+    constructor() {}
+
     /// @notice              Permits the use of `handle` for the address `account`.
     /// @dev                 The caller must be permitted to use `handle` for permit() to succeed. If not, permit() reverts.
     /// @param handle        Handle.
@@ -40,7 +37,7 @@ contract GCACL {
         persistedPermitted[handle][account] = true;
         emit Permitted(msg.sender, account, handle);
     }
-    
+
     /// @notice              Permits the use of `handle` by address `account` for this transaction.
     /// @dev                 The caller must be permitted to use `handle` for permitTransient() to succeed.
     ///                      If not, permitTransient() reverts.

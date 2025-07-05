@@ -13,9 +13,14 @@ struct CounterStorage {
 /// @notice   This contract emits events for all GC operations.
 /// @dev      This contract is deployed using an UUPS proxy.
 contract GCHandler {
-
     uint8[5] MPC_SIZES = [1, 8, 16, 32, 64];
-    enum METADATA_INDICES {ZERO, ONE, TWO, THREE, FOUR}
+    enum METADATA_INDICES {
+        ZERO,
+        ONE,
+        TWO,
+        THREE,
+        FOUR
+    }
     string constant MESSAGE_PREFIX = "Ethereum Signed Message:\n";
     CounterStorage internal decryptionOracleStorage;
     CounterStorage internal randStorage;
@@ -30,19 +35,74 @@ contract GCHandler {
     /// @param sender   Sender address.
     error ACLNotPermitted(uint256 handle, address sender);
 
-    event GCBinaryOperation(string opName, uint8 lhsBitSize, uint8 rhsBitSize, bytes1 inputTypes, uint256 lhsParameter, uint256 rhsParameter, uint256 resultHandle);
+    event GCBinaryOperation(
+        string opName,
+        uint8 lhsBitSize,
+        uint8 rhsBitSize,
+        bytes1 inputTypes,
+        uint256 lhsParameter,
+        uint256 rhsParameter,
+        uint256 resultHandle
+    );
     event GCOnboard(uint8 bitSize, uint256 ct, address userAddress, uint256 resultHandle);
-    event GCCheckedBinaryOperation(string opName, uint8 lhsBitSize, uint8 rhsBitSize, bytes1 inputTypes, uint256 lhsParameter, uint256 rhsParameter, uint256 overflowHandle, uint256 resultHandle);
-    event GCTransfer(uint8 fromBitSize, uint8 toBitSize, uint8 amountBitSize, bytes1 amountType, uint256 from, uint256 to, uint256 amount, uint256 newFromHandle, uint256 newToHandle, uint256 resultHandle);
-    event GCTransferWithAllowance(uint8 fromBitSize, uint8 toBitSize, uint8 amountBitSize, uint8 allowanceBitSize, bytes1 amountType, uint256 from, uint256 to, uint256 amount, uint256 allowance, uint256 newFromHandle, uint256 newToHandle, uint256 newAllowanceHandle, uint256 resultHandle);
-    event GCMux(uint8 lhsBitSize, uint8 rhsBitSize, bytes1 inputTypes, uint256 bitParameter, uint256 lhsParameter, uint256 rhsParameter, uint256 resultHandle);
+    event GCCheckedBinaryOperation(
+        string opName,
+        uint8 lhsBitSize,
+        uint8 rhsBitSize,
+        bytes1 inputTypes,
+        uint256 lhsParameter,
+        uint256 rhsParameter,
+        uint256 overflowHandle,
+        uint256 resultHandle
+    );
+    event GCTransfer(
+        uint8 fromBitSize,
+        uint8 toBitSize,
+        uint8 amountBitSize,
+        bytes1 amountType,
+        uint256 from,
+        uint256 to,
+        uint256 amount,
+        uint256 newFromHandle,
+        uint256 newToHandle,
+        uint256 resultHandle
+    );
+    event GCTransferWithAllowance(
+        uint8 fromBitSize,
+        uint8 toBitSize,
+        uint8 amountBitSize,
+        uint8 allowanceBitSize,
+        bytes1 amountType,
+        uint256 from,
+        uint256 to,
+        uint256 amount,
+        uint256 allowance,
+        uint256 newFromHandle,
+        uint256 newToHandle,
+        uint256 newAllowanceHandle,
+        uint256 resultHandle
+    );
+    event GCMux(
+        uint8 lhsBitSize,
+        uint8 rhsBitSize,
+        bytes1 inputTypes,
+        uint256 bitParameter,
+        uint256 lhsParameter,
+        uint256 rhsParameter,
+        uint256 resultHandle
+    );
     event GCRand(uint8 bitSize, uint256 resultHandle);
     event GCUnaryOperation(string opName, uint8 parameterBitSize, uint256 parameter, uint256 resultHandle);
-    event GCDecryptionRequest(uint256 indexed counter, uint256 decryptID, uint256[] handles, address contractCaller, bytes4 callbackSelector);
+    event GCDecryptionRequest(
+        uint256 indexed counter,
+        uint256 decryptID,
+        uint256[] handles,
+        address contractCaller,
+        bytes4 callbackSelector
+    );
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-    }
+    constructor() {}
 
     function getSize(bytes1 size) internal view returns (uint8) {
         // simple bounds check
@@ -56,12 +116,15 @@ contract GCHandler {
     }
 
     function checkACLBinary(uint256 lhsParam, uint256 rhsParam, bytes1 inputTypes) internal view returns (bool) {
-        if (inputTypes == bytes1(uint8(0))) { // both parameters are handles
+        if (inputTypes == bytes1(uint8(0))) {
+            // both parameters are handles
             if (!checkACL(lhsParam)) revert ACLNotPermitted(lhsParam, msg.sender);
             if (!checkACL(rhsParam)) revert ACLNotPermitted(rhsParam, msg.sender);
-        } else if (inputTypes == bytes1(uint8(1))) { // lhsParam is a public, rhsParam is a handle
+        } else if (inputTypes == bytes1(uint8(1))) {
+            // lhsParam is a public, rhsParam is a handle
             if (!checkACL(rhsParam)) revert ACLNotPermitted(rhsParam, msg.sender);
-        } else if (inputTypes == bytes1(uint8(2))) { // rhsParam is a public, lhsParam is a handle
+        } else if (inputTypes == bytes1(uint8(2))) {
+            // rhsParam is a public, lhsParam is a handle
             if (!checkACL(lhsParam)) revert ACLNotPermitted(lhsParam, msg.sender);
         }
         return true;
@@ -73,7 +136,6 @@ contract GCHandler {
     /// @param rhsParam      RHS parameter.
     /// @return resultHandle Result handle.
     function Add(bytes3 metadata, uint256 lhsParam, uint256 rhsParam) public virtual returns (uint256 resultHandle) {
-
         uint8 lhsBitSize = getSize(metadata[uint8(METADATA_INDICES.ZERO)]);
         uint8 rhsBitSize = getSize(metadata[uint8(METADATA_INDICES.ONE)]);
         bytes1 inputTypes = metadata[uint8(METADATA_INDICES.TWO)];
@@ -94,8 +156,11 @@ contract GCHandler {
     /// @param rhsParam        RHS parameter.
     /// @return overflowHandle Overflow handle.
     /// @return resultHandle   Result handle.
-    function CheckedAdd(bytes3 metadata, uint256 lhsParam, uint256 rhsParam) public virtual returns (uint256 overflowHandle, uint256 resultHandle) {
-
+    function CheckedAdd(
+        bytes3 metadata,
+        uint256 lhsParam,
+        uint256 rhsParam
+    ) public virtual returns (uint256 overflowHandle, uint256 resultHandle) {
         uint8 lhsBitSize = getSize(metadata[uint8(METADATA_INDICES.ZERO)]);
         uint8 rhsBitSize = getSize(metadata[uint8(METADATA_INDICES.ONE)]);
         bytes1 inputTypes = metadata[uint8(METADATA_INDICES.TWO)];
@@ -109,7 +174,16 @@ contract GCHandler {
         acl.permitTransient(resultHandle, msg.sender);
         acl.permitTransient(overflowHandle, msg.sender);
 
-        emit GCCheckedBinaryOperation("ADDWITHOVERFLOWBIT", lhsBitSize, rhsBitSize, inputTypes, lhsParam, rhsParam, overflowHandle, resultHandle);
+        emit GCCheckedBinaryOperation(
+            "ADDWITHOVERFLOWBIT",
+            lhsBitSize,
+            rhsBitSize,
+            inputTypes,
+            lhsParam,
+            rhsParam,
+            overflowHandle,
+            resultHandle
+        );
     }
 
     /// @notice              Computes Sub operation.
@@ -138,7 +212,11 @@ contract GCHandler {
     /// @param rhsParam        RHS parameter.
     /// @return overflowHandle Overflow handle.
     /// @return resultHandle   Result handle.
-    function CheckedSub(bytes3 metadata, uint256 lhsParam, uint256 rhsParam) public virtual returns (uint256 overflowHandle, uint256 resultHandle) {
+    function CheckedSub(
+        bytes3 metadata,
+        uint256 lhsParam,
+        uint256 rhsParam
+    ) public virtual returns (uint256 overflowHandle, uint256 resultHandle) {
         uint8 lhsBitSize = getSize(metadata[uint8(METADATA_INDICES.ZERO)]);
         uint8 rhsBitSize = getSize(metadata[uint8(METADATA_INDICES.ONE)]);
         bytes1 inputTypes = metadata[uint8(METADATA_INDICES.TWO)];
@@ -152,7 +230,16 @@ contract GCHandler {
         acl.permitTransient(resultHandle, msg.sender);
         acl.permitTransient(overflowHandle, msg.sender);
 
-        emit GCCheckedBinaryOperation("SUBWITHOVERFLOWBIT", lhsBitSize, rhsBitSize, inputTypes, lhsParam, rhsParam, overflowHandle, resultHandle);
+        emit GCCheckedBinaryOperation(
+            "SUBWITHOVERFLOWBIT",
+            lhsBitSize,
+            rhsBitSize,
+            inputTypes,
+            lhsParam,
+            rhsParam,
+            overflowHandle,
+            resultHandle
+        );
     }
 
     /// @notice              Computes Mul operation.
@@ -175,14 +262,17 @@ contract GCHandler {
         emit GCBinaryOperation("MUL", lhsBitSize, rhsBitSize, inputTypes, lhsParam, rhsParam, resultHandle);
     }
 
-
     /// @notice                Computes Checked Mul operation.
     /// @param metadata        Meta data.
     /// @param lhsParam        LHS parameter.
     /// @param rhsParam        RHS parameter.
     /// @return overflowHandle Overflow handle.
     /// @return resultHandle   Result handle.
-    function CheckedMul(bytes3 metadata, uint256 lhsParam, uint256 rhsParam) public virtual returns (uint256 overflowHandle, uint256 resultHandle) {
+    function CheckedMul(
+        bytes3 metadata,
+        uint256 lhsParam,
+        uint256 rhsParam
+    ) public virtual returns (uint256 overflowHandle, uint256 resultHandle) {
         uint8 lhsBitSize = getSize(metadata[uint8(METADATA_INDICES.ZERO)]);
         uint8 rhsBitSize = getSize(metadata[uint8(METADATA_INDICES.ONE)]);
         bytes1 inputTypes = metadata[uint8(METADATA_INDICES.TWO)];
@@ -196,7 +286,16 @@ contract GCHandler {
         acl.permitTransient(resultHandle, msg.sender);
         acl.permitTransient(overflowHandle, msg.sender);
 
-        emit GCCheckedBinaryOperation("MULWITHOVERFLOWBIT", lhsBitSize, rhsBitSize, inputTypes, lhsParam, rhsParam, overflowHandle, resultHandle);
+        emit GCCheckedBinaryOperation(
+            "MULWITHOVERFLOWBIT",
+            lhsBitSize,
+            rhsBitSize,
+            inputTypes,
+            lhsParam,
+            rhsParam,
+            overflowHandle,
+            resultHandle
+        );
     }
 
     /// @notice              Computes Le (Less than or Equal) operation.
@@ -507,7 +606,12 @@ contract GCHandler {
     /// @return newFromHandle Result from handle.
     /// @return newToHandle   Result to handle.
     /// @return resultHandle  Result handle.
-    function Transfer(bytes4 metadata, uint256 from, uint256 to, uint256 amount) public virtual returns (uint256 newFromHandle, uint256 newToHandle, uint256 resultHandle) {
+    function Transfer(
+        bytes4 metadata,
+        uint256 from,
+        uint256 to,
+        uint256 amount
+    ) public virtual returns (uint256 newFromHandle, uint256 newToHandle, uint256 resultHandle) {
         uint8 fromBitSize = getSize(metadata[uint8(METADATA_INDICES.ZERO)]);
         uint8 toBitSize = getSize(metadata[uint8(METADATA_INDICES.ONE)]);
         uint8 amountBitSize = getSize(metadata[uint8(METADATA_INDICES.TWO)]);
@@ -527,7 +631,18 @@ contract GCHandler {
         acl.permitTransient(newToHandle, msg.sender);
         acl.permitTransient(resultHandle, msg.sender);
 
-        emit GCTransfer(fromBitSize, toBitSize, amountBitSize, amountType, from, to, amount, newFromHandle, newToHandle, resultHandle);
+        emit GCTransfer(
+            fromBitSize,
+            toBitSize,
+            amountBitSize,
+            amountType,
+            from,
+            to,
+            amount,
+            newFromHandle,
+            newToHandle,
+            resultHandle
+        );
     }
 
     /// @notice              Computes TransferWithAllowance operation.
@@ -540,7 +655,17 @@ contract GCHandler {
     /// @return newToHandle   Result to handle.
     /// @return resultHandle  Result handle.
     /// @return newAllowanceHandle Result allowance handle.
-    function TransferWithAllowance(bytes5 metadata, uint256 from, uint256 to, uint256 amount, uint256 allowance) public virtual returns (uint256 newFromHandle, uint256 newToHandle, uint256 resultHandle, uint256 newAllowanceHandle) {
+    function TransferWithAllowance(
+        bytes5 metadata,
+        uint256 from,
+        uint256 to,
+        uint256 amount,
+        uint256 allowance
+    )
+        public
+        virtual
+        returns (uint256 newFromHandle, uint256 newToHandle, uint256 resultHandle, uint256 newAllowanceHandle)
+    {
         uint8 fromBitSize = getSize(metadata[uint8(METADATA_INDICES.ZERO)]);
         uint8 toBitSize = getSize(metadata[uint8(METADATA_INDICES.ONE)]);
         uint8 amountBitSize = getSize(metadata[uint8(METADATA_INDICES.TWO)]);
@@ -553,17 +678,39 @@ contract GCHandler {
             if (!checkACL(amount)) revert ACLNotPermitted(amount, msg.sender);
         }
 
-        newFromHandle = uint256(keccak256(abi.encodePacked("TransferAllowanceFrom", from, to, amount, allowance, metadata)));
-        newToHandle = uint256(keccak256(abi.encodePacked("TransferAllowanceTo", from, to, amount, allowance, metadata)));
-        resultHandle = uint256(keccak256(abi.encodePacked("TransferAllowanceRes", from, to, amount, allowance, metadata)));
-        newAllowanceHandle = uint256(keccak256(abi.encodePacked("TransferAllowanceAllowance", from, to, amount, allowance, metadata)));
+        newFromHandle = uint256(
+            keccak256(abi.encodePacked("TransferAllowanceFrom", from, to, amount, allowance, metadata))
+        );
+        newToHandle = uint256(
+            keccak256(abi.encodePacked("TransferAllowanceTo", from, to, amount, allowance, metadata))
+        );
+        resultHandle = uint256(
+            keccak256(abi.encodePacked("TransferAllowanceRes", from, to, amount, allowance, metadata))
+        );
+        newAllowanceHandle = uint256(
+            keccak256(abi.encodePacked("TransferAllowanceAllowance", from, to, amount, allowance, metadata))
+        );
         // Permit the calling contract to access the result handles
         acl.permitTransient(newFromHandle, msg.sender);
         acl.permitTransient(newToHandle, msg.sender);
         acl.permitTransient(resultHandle, msg.sender);
         acl.permitTransient(newAllowanceHandle, msg.sender);
 
-        emit GCTransferWithAllowance(fromBitSize, toBitSize, amountBitSize, allowanceBitSize, amountType, from, to, amount, allowance, newFromHandle, newToHandle, resultHandle, newAllowanceHandle);
+        emit GCTransferWithAllowance(
+            fromBitSize,
+            toBitSize,
+            amountBitSize,
+            allowanceBitSize,
+            amountType,
+            from,
+            to,
+            amount,
+            allowance,
+            newFromHandle,
+            newToHandle,
+            resultHandle,
+            newAllowanceHandle
+        );
     }
 
     /// @notice              Computes Mux operation.
@@ -572,7 +719,12 @@ contract GCHandler {
     /// @param lhsParam  LHS parameter.
     /// @param rhsParam  RHS parameter.
     /// @return resultHandle Result handle.
-    function Mux(bytes3 metadata, uint256 bitParam, uint256 lhsParam, uint256 rhsParam) public virtual returns (uint256 resultHandle) {
+    function Mux(
+        bytes3 metadata,
+        uint256 bitParam,
+        uint256 lhsParam,
+        uint256 rhsParam
+    ) public virtual returns (uint256 resultHandle) {
         // TODO implement checks on the input
         uint8 lhsBitSize = getSize(metadata[uint8(METADATA_INDICES.ZERO)]);
         uint8 rhsBitSize = getSize(metadata[uint8(METADATA_INDICES.ONE)]);
@@ -592,7 +744,7 @@ contract GCHandler {
     /// @param metadata      Meta data.
     /// @param param         Parameter.
     /// @return result       Result handle.
-    function SetPublic(bytes1 metadata, uint256 param) public virtual returns (uint256 result){
+    function SetPublic(bytes1 metadata, uint256 param) public virtual returns (uint256 result) {
         uint8 bitSize = getSize(metadata[uint8(METADATA_INDICES.ZERO)]);
         result = uint256(keccak256(abi.encodePacked("SetPublic", param, metadata)));
         // Permit the calling contract to access the result handle
@@ -605,7 +757,7 @@ contract GCHandler {
     /// @param metadata      Meta data.
     /// @param param         Parameter.
     /// @return result       Result handle.
-    function Not(bytes1 metadata, uint256 param) public virtual returns (uint256 result){
+    function Not(bytes1 metadata, uint256 param) public virtual returns (uint256 result) {
         // Check that the caller is permitted to access the parameter
         if (!checkACL(param)) revert ACLNotPermitted(param, msg.sender);
 
@@ -643,7 +795,11 @@ contract GCHandler {
     /// @param ciphertext    Ciphertext to validate.
     /// @param signature     Signature of the ciphertext.
     /// @return result       Result handle.
-    function ValidateCiphertext(bytes1 metadata, uint256 ciphertext, bytes calldata signature) public virtual returns (uint256 result){
+    function ValidateCiphertext(
+        bytes1 metadata,
+        uint256 ciphertext,
+        bytes calldata signature
+    ) public virtual returns (uint256 result) {
         // check if the signature is valid
         if (signature.length != 65) {
             revert InvalidSignature();
@@ -654,7 +810,7 @@ contract GCHandler {
         bytes32 messageHash = keccak256(message);
 
         uint8 v = uint8(signature[64]);
-        if ( v < 27) {
+        if (v < 27) {
             v += 27; // Need to adjust v to be 27/28
         }
 
@@ -689,7 +845,7 @@ contract GCHandler {
     /// @notice              Computes Rand operation.
     /// @param metadata      Meta data.
     /// @return result       Result handle.
-    function Rand(bytes1 metadata) public virtual returns (uint256 result){
+    function Rand(bytes1 metadata) public virtual returns (uint256 result) {
         uint8 bitSize = getSize(metadata[uint8(METADATA_INDICES.ZERO)]);
         // The randStorage.counter is used to avoid collisions in the result handles
         // when there are multiple calls to the Rand function.
@@ -705,7 +861,7 @@ contract GCHandler {
     /// @param metadata      Meta data.
     /// @param numBits       Number of bits to generate.
     /// @return result       Result handle.
-    function RandBoundedBits(bytes1 metadata, uint8 numBits) public virtual returns (uint256 result){
+    function RandBoundedBits(bytes1 metadata, uint8 numBits) public virtual returns (uint256 result) {
         uint8 bitSize = getSize(metadata[uint8(METADATA_INDICES.ZERO)]);
         // The randStorage.counter is used to avoid collisions in the result handles
         // when there are multiple calls to the Rand function.
@@ -716,5 +872,4 @@ contract GCHandler {
         emit GCUnaryOperation("RAND", bitSize, numBits, result);
         randStorage.counter++;
     }
-        
 }

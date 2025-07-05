@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 /**
  * @title ShieldedToken
  * @dev A privacy-focused ERC20 token with additional security features
- * 
+ *
  * Features:
  * - Standard ERC20 functionality
  * - Pausable for emergency stops
@@ -20,7 +20,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
  * - Reentrancy protection
  * - Ownership controls
  */
-contract ShieldedToken is DecryptionCaller{
+contract ShieldedToken is DecryptionCaller {
     /// @dev This is stored as an immutable to save gas on repeated zero checks
     gtUint64 public immutable zero;
 
@@ -118,7 +118,7 @@ contract ShieldedToken is DecryptionCaller{
     /// @param add The address to get the balance from
     /// @return The balance handle (zero if uninitialized)
     function balanceOf(address add) public view returns (gtUint64) {
-        return  balances[add];
+        return balances[add];
     }
 
     function transfer(address _to, itUint64 calldata _it) public returns (gtBool) {
@@ -133,7 +133,11 @@ contract ShieldedToken is DecryptionCaller{
     /// @return The handle to the transfer's result
     function transfer(address _to, uint64 _value) public returns (gtBool) {
         (gtUint64 fromBalance, gtUint64 toBalance) = _getBalances(msg.sender, _to);
-        (gtUint64 newFromBalance, gtUint64 newToBalance, gtBool result) = MpcCore.transfer(fromBalance, toBalance, _value);
+        (gtUint64 newFromBalance, gtUint64 newToBalance, gtBool result) = MpcCore.transfer(
+            fromBalance,
+            toBalance,
+            _value
+        );
         _setNewBalances(msg.sender, _to, newFromBalance, newToBalance);
         emit Transfer(msg.sender, _to, _value);
         return result;
@@ -146,7 +150,11 @@ contract ShieldedToken is DecryptionCaller{
         // Check if the sender is permitted to use the _value handle
         require(MpcCore.isSenderPermitted(_value));
         (gtUint64 fromBalance, gtUint64 toBalance) = _getBalances(msg.sender, _to);
-        (gtUint64 newFromBalance, gtUint64 newToBalance, gtBool result) = MpcCore.transfer(fromBalance, toBalance, _value);
+        (gtUint64 newFromBalance, gtUint64 newToBalance, gtBool result) = MpcCore.transfer(
+            fromBalance,
+            toBalance,
+            _value
+        );
         _setNewBalances(msg.sender, _to, newFromBalance, newToBalance);
         emit Transfer(msg.sender, _to);
         return result;
@@ -170,7 +178,8 @@ contract ShieldedToken is DecryptionCaller{
     function transferFrom(address _from, address _to, uint64 _value) public returns (gtBool) {
         (gtUint64 fromBalance, gtUint64 toBalance) = _getBalances(_from, _to);
         gtUint64 gtAllowance = _getGTAllowance(_from, msg.sender);
-        (gtUint64 newFromBalance, gtUint64 newToBalance, gtBool result, gtUint64 newAllowance) = MpcCore.transferWithAllowance(fromBalance, toBalance, _value, gtAllowance);
+        (gtUint64 newFromBalance, gtUint64 newToBalance, gtBool result, gtUint64 newAllowance) = MpcCore
+            .transferWithAllowance(fromBalance, toBalance, _value, gtAllowance);
         _setApproveValue(_from, msg.sender, newAllowance);
         _setNewBalances(_from, _to, newFromBalance, newToBalance);
         emit Transfer(_from, _to, _value);
@@ -186,7 +195,8 @@ contract ShieldedToken is DecryptionCaller{
         require(MpcCore.isSenderPermitted(_value));
         (gtUint64 fromBalance, gtUint64 toBalance) = _getBalances(_from, _to);
         gtUint64 gtAllowance = _getGTAllowance(_from, msg.sender);
-        (gtUint64 newFromBalance, gtUint64 newToBalance, gtBool result, gtUint64 newAllowance) = MpcCore.transferWithAllowance(fromBalance, toBalance, _value, gtAllowance);
+        (gtUint64 newFromBalance, gtUint64 newToBalance, gtBool result, gtUint64 newAllowance) = MpcCore
+            .transferWithAllowance(fromBalance, toBalance, _value, gtAllowance);
         _setApproveValue(_from, msg.sender, newAllowance);
         _setNewBalances(_from, _to, newFromBalance, newToBalance);
         emit Transfer(_from, _to);
@@ -237,7 +247,8 @@ contract ShieldedToken is DecryptionCaller{
 
     function _balanceOf(address add) private view returns (gtUint64) {
         gtUint64 balance = balances[add];
-        if (gtUint64.unwrap(balance) == 0){ // 0 means that no balance has been set, set it to 0
+        if (gtUint64.unwrap(balance) == 0) {
+            // 0 means that no balance has been set, set it to 0
             balance = zero;
         }
         return balance;
@@ -282,7 +293,7 @@ contract ShieldedToken is DecryptionCaller{
         MpcCore.permitThis(_value);
         MpcCore.permit(_value, _owner);
     }
-    
+
     /// @notice Returns the number of decimals used to get its user representation
     /// @return The number of decimals
     function decimals() public pure returns (uint8) {
@@ -308,35 +319,36 @@ contract ShieldedToken is DecryptionCaller{
 
     // Function to unshield private tokens back to standard ERC20 tokens
     function unshield(uint256 privateAmount) public returns (bool) {
-       require(privateAmount > 0, "Amount must be greater than 0");
-       gtUint64 balanceGt = _balanceOf(msg.sender);
-       gtUint64 amountGt = MpcCore.setPublic64(uint64(privateAmount));
+        require(privateAmount > 0, "Amount must be greater than 0");
+        gtUint64 balanceGt = _balanceOf(msg.sender);
+        gtUint64 amountGt = MpcCore.setPublic64(uint64(privateAmount));
 
-       (, gtUint64 newBalanceGt) = MpcCore.checkedSubWithOverflowBit(balanceGt, amountGt);
-       (gtBool overflowBit64, gtUint64 amountToUnshieldGt) = MpcCore.checkedSubWithOverflowBit(balanceGt, newBalanceGt);
-       MpcCore.permitThis(amountToUnshieldGt);
-       MpcCore.permitThis(newBalanceGt);
-       MpcCore.permit(newBalanceGt, msg.sender);
-       balances[msg.sender] = newBalanceGt;
+        (, gtUint64 newBalanceGt) = MpcCore.checkedSubWithOverflowBit(balanceGt, amountGt);
+        (gtBool overflowBit64, gtUint64 amountToUnshieldGt) = MpcCore.checkedSubWithOverflowBit(
+            balanceGt,
+            newBalanceGt
+        );
+        MpcCore.permitThis(amountToUnshieldGt);
+        MpcCore.permitThis(newBalanceGt);
+        MpcCore.permit(newBalanceGt, msg.sender);
+        balances[msg.sender] = newBalanceGt;
 
-       // user balance = 10, want to  unshield 3. checkedSubWithOverflowBit(10, 3) = 7, amount to unshield = bal before 10 sub new balance 7 = 3
-       // user balance = 5, want to unshield 7. checkedSubWithOverflowBit(5, 7) = 5, amount to unshield = bal before 5 sub new balance 5 = 0
+        // user balance = 10, want to  unshield 3. checkedSubWithOverflowBit(10, 3) = 7, amount to unshield = bal before 10 sub new balance 7 = 3
+        // user balance = 5, want to unshield 7. checkedSubWithOverflowBit(5, 7) = 5, amount to unshield = bal before 5 sub new balance 5 = 0
 
-       // Create array for decryption request
-       uint256[] memory handles = new uint256[](2);
-       handles[0] = gtBool.unwrap(overflowBit64);
-       handles[1] = gtUint64.unwrap(amountToUnshieldGt);
+        // Create array for decryption request
+        uint256[] memory handles = new uint256[](2);
+        handles[0] = gtBool.unwrap(overflowBit64);
+        handles[1] = gtUint64.unwrap(amountToUnshieldGt);
 
-       // Store the request details
-       unshieldRequests[decryptCounter] = UnshieldRequest({
-           user: msg.sender
-       });
+        // Store the request details
+        unshieldRequests[decryptCounter] = UnshieldRequest({user: msg.sender});
 
-       // Request decryption
-       requestDecryption(handles, this.callbackUnshield.selector);
+        // Request decryption
+        requestDecryption(handles, this.callbackUnshield.selector);
 
-       emit UnshieldRequested(msg.sender, privateAmount);
-       return true;
+        emit UnshieldRequested(msg.sender, privateAmount);
+        return true;
     }
 
     function callbackUnshield(uint256 decryptID, bytes[] calldata output, bytes calldata signature) public {
@@ -360,5 +372,4 @@ contract ShieldedToken is DecryptionCaller{
         // Clean up the request
         delete unshieldRequests[decryptID];
     }
-
 }
