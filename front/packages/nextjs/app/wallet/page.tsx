@@ -75,7 +75,7 @@ const WalletPage = () => {
         {isConnected && (
           <>
             <PortfolioHeader />
-            <div className="bg-white rounded-3xl shadow-lg p-6 mb-4">
+            <div className="bg-white rounded-3xl shadow-lg p-6 mt-6">
               <TokenPairsList
                 chainId={chainId}
                 testUsdPrice={testUsdPrice}

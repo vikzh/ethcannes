@@ -1,199 +1,470 @@
 import React from "react";
-import { Address, parseAbi } from "viem";
-import { useAccount, useReadContract } from "wagmi";
-import usePrivateBalance from "~~/hooks/usePrivateBalance";
-import useUserKey from "~~/hooks/useUserKey";
+import { ethers } from "ethers";
+import { getNetworkDisplayInfo } from "../../config/network";
+import { formatPrivateBalance, getUserKeyFromStorage } from "../../utils/soda/cryptoUtils";
+import { TokenPair } from "../../hooks/mpc";
+import { BottomPanelType } from "./ActionPanel";
 
-export type TokenPairCardProps = {
-  clearTokenAddress: Address;
-  privateTokenAddress: Address;
-  tokenName?: string;
-  tokenSymbol?: string;
-};
+interface TokenPairCardProps {
+  pair: TokenPair;
+  index: number;
+  testUsdPrice: number;
+  chainId: number;
+  
+  // Panel state
+  bottomPanelType: BottomPanelType;
+  activeRowIndex: number | null;
+  activeNetworkId: number | null;
+  
+  // Loading states
+  isRefreshingBalance: boolean;
+  clickedButton: {action: string, networkId: number, index: number} | null;
+  
+  // Handlers
+  onNetworkSwitch: (targetChainId: number, action: string, index: number) => void;
+  onSetBottomPanel: (type: BottomPanelType, index: number, networkId: number) => void;
+  onPrivateBalanceDecrypt: (chainId: number, privateTokenAddress?: string) => void;
+  onOnboard: () => void;
+}
 
 export const TokenPairCard: React.FC<TokenPairCardProps> = ({
-  clearTokenAddress,
-  privateTokenAddress,
-  tokenName,
-  tokenSymbol,
+  pair,
+  index,
+  testUsdPrice,
+  chainId,
+  bottomPanelType,
+  activeRowIndex,
+  activeNetworkId,
+  isRefreshingBalance,
+  clickedButton,
+  onNetworkSwitch,
+  onSetBottomPanel,
+  onPrivateBalanceDecrypt,
+  onOnboard,
 }) => {
-  const { address: userAddress } = useAccount();
-  
-  // ERC20 ABI for clear token interactions
-  const erc20Abi = parseAbi([
-    "function name() view returns (string)",
-    "function symbol() view returns (string)",
-    "function decimals() view returns (uint8)",
-    "function balanceOf(address) view returns (uint256)",
-  ]);
-  
-  // Clear token balance
-  const { data: clearBalance, isLoading: isLoadingClear } = useReadContract({
-    address: clearTokenAddress,
-    abi: erc20Abi,
-    functionName: "balanceOf",
-    args: [userAddress!],
-    query: {
-      enabled: !!userAddress && clearTokenAddress !== "0x0000000000000000000000000000000000000000",
-    },
-  });
+  const networkInfo = getNetworkDisplayInfo(pair.chainId);
 
-  // Private token balance
-  const {
-    encrypted,
-    decrypted,
-    isDecrypting,
-    hasDecryptedBalance,
-    formattedBalance,
-    decryptBalance,
-    error: balanceError,
-  } = usePrivateBalance(privateTokenAddress);
+  // Local state to manage visibility of the private token balance
+  const [isBalanceHidden, setIsBalanceHidden] = React.useState<boolean>(
+    !pair.privateTokenBalance,
+  );
 
-  // Retrieve user AES key (if available)
-  const { aesKey } = useUserKey();
+  // When a decrypted balance arrives through state updates, automatically reveal it
+  React.useEffect(() => {
+    if (pair.privateTokenBalance && isBalanceHidden) {
+      setIsBalanceHidden(false);
+    }
+  }, [pair.privateTokenBalance]);
 
-  // Token metadata
-  const { data: name } = useReadContract({
-    address: clearTokenAddress,
-    abi: erc20Abi,
-    functionName: "name",
-    query: {
-      enabled: clearTokenAddress !== "0x0000000000000000000000000000000000000000",
-    },
-  });
-
-  const { data: symbol } = useReadContract({
-    address: clearTokenAddress,
-    abi: erc20Abi,
-    functionName: "symbol",
-    query: {
-      enabled: clearTokenAddress !== "0x0000000000000000000000000000000000000000",
-    },
-  });
-
-  const { data: decimals } = useReadContract({
-    address: clearTokenAddress,
-    abi: erc20Abi,
-    functionName: "decimals",
-    query: {
-      enabled: clearTokenAddress !== "0x0000000000000000000000000000000000000000",
-    },
-  });
-
-  // Format clear balance for display
-  const formatClearBalance = (balance: bigint | undefined, decimals: number = 18) => {
-    if (!balance) return "0.00";
-    
-    const divisor = BigInt(10 ** decimals);
-    const whole = balance / divisor;
-    const fraction = balance % divisor;
-    
-    return `${whole}.${fraction.toString().padStart(decimals, "0").slice(0, 5)}`;
+  const handleToggleBalanceVisibility = () => {
+    if (isBalanceHidden) {
+      // Balance is currently hidden – attempt to reveal
+      if (pair.privateTokenBalance) {
+        // Already decrypted – just show it
+        setIsBalanceHidden(false);
+      } else {
+        // Need to decrypt first – reuse existing decrypt logic
+        if (pair.chainId !== chainId) {
+          onNetworkSwitch(pair.chainId, "decrypt", index);
+        } else {
+          onPrivateBalanceDecrypt(pair.chainId, pair.privateAddress);
+        }
+      }
+    } else {
+      // Hide the balance
+      setIsBalanceHidden(true);
+    }
   };
 
-  const handleDecryptBalance = async () => {
-    if (!aesKey) return;
-    await decryptBalance(aesKey);
+  // Action button component
+  const ActionButton: React.FC<{
+    action: string;
+    icon: React.ReactNode;
+    title: string;
+    disabled?: boolean;
+    isActive?: boolean;
+    onClick: () => void;
+  }> = ({ action, icon, title, disabled = false, isActive = false, onClick }) => {
+    const isLoading = 
+      (action === "decrypt" && (isRefreshingBalance && pair.chainId === chainId)) ||
+      (clickedButton?.action === action && clickedButton?.networkId === pair.chainId && clickedButton?.index === index);
+
+    return (
+      <button
+        className={`flex items-center gap-1 md:gap-2 text-xs md:text-sm font-medium rounded-full px-2.5 md:px-3 py-1 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-soda-blue-600
+          ${isActive
+            ? "bg-soda-blue-600 text-white"
+            : pair.chainId === chainId
+            ? "bg-gray-100 hover:bg-gray-200 text-gray-800"
+            : "bg-gray-200 hover:bg-gray-300 text-gray-600"}
+          ${disabled || isLoading ? "opacity-60 cursor-not-allowed" : ""}`}
+        onClick={onClick}
+        disabled={disabled || isLoading}
+        title={pair.chainId === chainId ? title : `Switch to ${networkInfo?.name} to ${title}`}
+      >
+        {isLoading ? (
+          <span className="loading loading-spinner loading-xs"></span>
+        ) : (
+          icon
+        )}
+        {/* Show label on medium+ screens to keep compact on mobile */}
+        <span className="hidden md:inline-block whitespace-nowrap">{title}</span>
+      </button>
+    );
   };
 
   return (
-    <div className="flex justify-center items-center gap-8 p-6">
+    <div className="flex flex-col md:flex-row items-stretch gap-4 mb-4">
       {/* Clear Token Card */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 min-w-[280px]">
-        <div className="text-center">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-              <span className="text-blue-600 font-bold text-lg">C</span>
+      <div className="flex flex-col gap-4 p-4 hover:bg-gray-50 rounded-xl transition-colors border border-gray-200 flex-1 min-w-0">
+        {/* Metadata */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-soda-blue-900 flex items-center justify-center flex-shrink-0">
+            <span className="text-white font-bold text-sm">
+              {pair.data.clearTokenSymbol?.charAt(0) ?? "T"}
+            </span>
+          </div>
+          <div>
+            <div className="font-semibold text-gray-900">
+              {pair.data.clearTokenName ?? "Loading..."}
+            </div>
+            <div className="text-sm text-gray-500">
+              {pair.data.clearTokenSymbol ?? "Loading..."}
             </div>
           </div>
-          
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Clear {tokenName || name || "Token"}
-          </h3>
-          
-          <div className="text-3xl font-bold text-gray-900 mb-1">
-            {isLoadingClear ? (
-              <div className="animate-pulse bg-gray-200 h-8 w-24 mx-auto rounded"></div>
-            ) : (
-              formatClearBalance(clearBalance, Number(decimals) || 18)
-            )}
+        </div>
+
+        {/* Balance */}
+        <div>
+          <div className="font-semibold text-gray-900">
+            $
+            {pair.clearTokenBalance &&
+            pair.data.clearTokenDecimals !== null &&
+            !isNaN(Number(pair.clearTokenBalance))
+              ? (
+                  parseFloat(
+                    ethers.formatUnits(
+                      pair.clearTokenBalance,
+                      pair.data.clearTokenDecimals,
+                    ),
+                  ) * testUsdPrice
+                ).toFixed(2)
+              : "0.00"}
           </div>
-          
-          <div className="text-sm text-gray-500 uppercase tracking-wide">
-            {tokenSymbol || symbol || "TOKEN"}
+          <div className="text-sm text-gray-500">
+            {pair.clearTokenBalance &&
+            pair.data.clearTokenDecimals !== null &&
+            !isNaN(Number(pair.clearTokenBalance))
+              ? ethers.formatUnits(pair.clearTokenBalance, pair.data.clearTokenDecimals)
+              : "0.0"}{" "}
+            {pair.data.clearTokenSymbol ?? "Token"}
           </div>
-          
-          <div className="mt-4 text-xs text-gray-400">
-            Public Balance
-          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-wrap gap-2 mt-auto">
+          <ActionButton
+            action="transfer-clear"
+            title="Send"
+            disabled={!pair.clearTokenBalance || pair.clearTokenBalance === "0"}
+            isActive={
+              bottomPanelType === "transfer-clear" &&
+              activeRowIndex === index &&
+              activeNetworkId === pair.chainId
+            }
+            onClick={() => {
+              if (pair.chainId !== chainId) {
+                onNetworkSwitch(pair.chainId, "transfer-clear", index);
+              } else {
+                onSetBottomPanel("transfer-clear", index, pair.chainId);
+              }
+            }}
+            icon={
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-3.5 h-3.5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25"
+                />
+              </svg>
+            }
+          />
+          <ActionButton
+            action="shield"
+            title="Shield"
+            disabled={!pair.clearTokenBalance || pair.clearTokenBalance === "0"}
+            isActive={
+              bottomPanelType === "shield" &&
+              activeRowIndex === index &&
+              activeNetworkId === pair.chainId
+            }
+            onClick={() => {
+              if (pair.chainId !== chainId) {
+                onNetworkSwitch(pair.chainId, "shield", index);
+              } else {
+                onSetBottomPanel("shield", index, pair.chainId);
+              }
+            }}
+            icon={
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-4 h-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.623 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
+                />
+              </svg>
+            }
+          />
+          <ActionButton
+            action="mint"
+            title="Mint"
+            isActive={
+              bottomPanelType === "mint" &&
+              activeRowIndex === index &&
+              activeNetworkId === pair.chainId
+            }
+            onClick={() => {
+              if (pair.chainId !== chainId) {
+                onNetworkSwitch(pair.chainId, "mint", index);
+              } else {
+                onSetBottomPanel("mint", index, pair.chainId);
+              }
+            }}
+            icon={
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-4 h-4"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+            }
+          />
         </div>
       </div>
 
-      {/* Arrow Indicator */}
-      <div className="flex flex-col items-center">
-        <div className="text-2xl text-gray-400">⇄</div>
-        <div className="text-xs text-gray-500 mt-1">Shield/Unshield</div>
+      {/* Swap Icon */}
+      <div className="hidden md:flex items-center justify-center">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={1.5}
+          stroke="currentColor"
+          className="w-6 h-6 text-gray-400"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M8 7h13M21 7l-3-3M21 7l-3 3M8 17h13M8 17l3-3M8 17l3 3"
+          />
+        </svg>
       </div>
 
       {/* Private Token Card */}
-      <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-300 hover:shadow-md transition-all duration-300 min-w-[280px]">
-        <div className="text-center">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-              <span className="text-gray-600 font-bold text-lg">P</span>
+      <div className="flex flex-col gap-4 p-4 hover:bg-gray-50 rounded-xl transition-colors border border-gray-200 flex-1 min-w-0">
+        {/* Metadata */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center flex-shrink-0">
+            <span className="text-white font-bold text-sm">
+              {pair.data.privateTokenSymbol?.charAt(0) ?? "P"}
+            </span>
+          </div>
+          <div>
+            <div className="font-semibold text-gray-900">
+              {pair.data.privateTokenName ?? "Loading..."}
+            </div>
+            <div className="text-sm text-gray-500">
+              {pair.data.privateTokenSymbol ?? "Loading..."}
             </div>
           </div>
-          
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Private {tokenName || name || "Token"}
-          </h3>
-          
-          <div className="text-3xl font-bold text-gray-700 mb-1">
-            {!hasDecryptedBalance ? (
-              <div className="font-mono text-gray-400 tracking-wider">
-                *****
-              </div>
-            ) : (
-              formattedBalance
-            )}
+        </div>
+
+        {/* Balance */}
+        <div>
+          <div className="font-semibold text-gray-900">
+            {isBalanceHidden || !getUserKeyFromStorage() || pair.chainId !== chainId
+              ? "*****"
+              : pair.privateTokenBalance && pair.data.privateTokenDecimals !== null
+              ? "$" +
+                (
+                  parseFloat(
+                    formatPrivateBalance(
+                      pair.privateTokenBalance,
+                      pair.data.privateTokenDecimals,
+                    ),
+                  ) * testUsdPrice
+                ).toFixed(2)
+              : "$0.00"}
           </div>
-          
-          <div className="text-sm text-gray-500 uppercase tracking-wide">
-            p{tokenSymbol || symbol || "TOKEN"}
-          </div>
-          
-          <div className="mt-4">
-            {!hasDecryptedBalance ? (
+          <div className="text-sm text-gray-500 flex items-center gap-2">
+            <span>
+              {isBalanceHidden || !getUserKeyFromStorage() || pair.chainId !== chainId
+                ? "*****"
+                : pair.data.privateTokenDecimals !== null && pair.privateTokenBalance
+                ? formatPrivateBalance(
+                    pair.privateTokenBalance,
+                    pair.data.privateTokenDecimals,
+                  )
+                : "*****"}
+            </span>
+            {/* Toggle visibility button */}
+            {getUserKeyFromStorage() && (
               <button
-                onClick={handleDecryptBalance}
-                disabled={isDecrypting || !encrypted || !aesKey}
-                className="px-4 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                type="button"
+                className="w-5 h-5 flex items-center justify-center hover:text-gray-700 transition-colors"
+                onClick={handleToggleBalanceVisibility}
+                disabled={isRefreshingBalance && pair.chainId === chainId}
               >
-                {isDecrypting ? (
-                  <span className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Decrypting...
-                  </span>
+                {isRefreshingBalance && pair.chainId === chainId ? (
+                  <span className="loading loading-spinner loading-xs"></span>
+                ) : isBalanceHidden ? (
+                  // Eye (show)
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-4 h-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
                 ) : (
-                  "Decrypt Balance"
+                  // Eye with slash (hide)
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-4 h-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3.98 8.223a10.477 10.477 0 00-1.514 3.777 1.012 1.012 0 000 .001C3.423 16.49 7.36 19.5 12 19.5c2.18 0 4.208-.67 5.874-1.816m2.106-2.106A10.476 10.476 0 0021 12.001v-.002M6.343 6.343A10.46 10.46 0 0112 4.5c4.638 0 8.573 3.007 9.963 7.178a1.012 1.012 0 010 .639m-6.6 2.14a3 3 0 01-4.244-4.244"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3 3l18 18"
+                    />
+                  </svg>
                 )}
               </button>
-            ) : (
-              <div className="text-xs text-gray-500">
-                Private Balance Decrypted
-              </div>
             )}
+            <span>{pair.data.privateTokenSymbol ?? "Token"}</span>
           </div>
-          
-          {balanceError && privateTokenAddress !== "0x0000000000000000000000000000000000000000" && (
-            <div className="mt-2 text-xs text-red-500">
-              {balanceError}
-            </div>
-          )}
         </div>
+
+        {/* Actions */}
+        {!getUserKeyFromStorage() ? (
+          <button
+            className="px-3 py-1 bg-soda-blue-900 text-white rounded-full hover:bg-soda-blue-800 transition-colors text-sm mt-auto"
+            onClick={onOnboard}
+          >
+            Onboard
+          </button>
+        ) : (
+          <div className="flex flex-wrap gap-2 mt-auto">
+            <ActionButton
+              action="transfer-private"
+              title="Send"
+              isActive={
+                bottomPanelType === "transfer-private" &&
+                activeRowIndex === index &&
+                activeNetworkId === pair.chainId
+              }
+              onClick={() => {
+                if (pair.chainId !== chainId) {
+                  onNetworkSwitch(pair.chainId, "transfer-private", index);
+                } else {
+                  onSetBottomPanel("transfer-private", index, pair.chainId);
+                }
+              }}
+              icon={
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-3.5 h-3.5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25"
+                  />
+                </svg>
+              }
+            />
+
+            <ActionButton
+              action="unshield"
+              title="Unshield"
+              isActive={
+                bottomPanelType === "unshield" &&
+                activeRowIndex === index &&
+                activeNetworkId === pair.chainId
+              }
+              onClick={() => {
+                if (pair.chainId !== chainId) {
+                  onNetworkSwitch(pair.chainId, "unshield", index);
+                } else {
+                  onSetBottomPanel("unshield", index, pair.chainId);
+                }
+              }}
+              icon={
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-4 h-4"
+                >
+                  {/* Shield outline - same as shield icon but without checkmark */}
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 1.464A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.623 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
+                  />
+                  {/* Diagonal slash */}
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m6 6 12 12" />
+                </svg>
+              }
+            />
+          </div>
+        )}
       </div>
     </div>
   );
-};
-
-export default TokenPairCard;
+}; 
