@@ -22,6 +22,10 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 contract ShieldedToken {
     /// @dev This is stored as an immutable to save gas on repeated zero checks
     gtUint64 public immutable zero;
+
+    /// @notice Mapping of encrypted token balances for each address
+    /// @dev The balance is stored as a handle that requires encryption and decryption under the user's secret key to get the actual value
+    mapping(address => gtUint64) private balances;
     address public owner;
     IERC20 public underlying;
 
@@ -29,6 +33,16 @@ contract ShieldedToken {
     string private _name;
     /// @notice The symbol of the token
     string private _symbol;
+
+    /// @notice Emitted when tokens are transferred
+    /// @param _from The address of the sender
+    /// @param _to The address of the recipient
+    /// @param _value The amount of tokens transferred (only for clear transfers)
+    event Transfer(address indexed _from, address indexed _to, uint256 _value);
+    /// @notice Emitted when tokens are transferred (for encrypted transfers)
+    /// @param _from The address of the sender
+    /// @param _to The address of the recipient
+    event Transfer(address indexed _from, address indexed _to);
 
     /**
      * @dev Constructor that sets up the initial token configuration
@@ -43,35 +57,64 @@ contract ShieldedToken {
         MpcCore.permitThis(zero);
     }
 
-    
-    /**
-     * @dev Override transfer function to include pausable functionality
-     */
-    function transfer(address to, uint256 amount) 
-        public 
-        returns (bool)
-    {
-        return true;
+    function transfer(address _to, itUint64 calldata _it) public returns (gtBool) {
+        gtUint64 value = MpcCore.validateCiphertext(_it);
+        MpcCore.permitTransient(value, msg.sender); // Give transient permission the the sender, so the contractTransfer check will pass
+        return contractTransfer(_to, value);
     }
-    
-    /**
-     * @dev Override transferFrom function to include pausable functionality
-     */
-    function transferFrom(address from, address to, uint256 amount) 
-        public 
-        returns (bool)
-    {
-        return true;
+
+    /// @notice Transfers tokens using a clear value
+    /// @param _to The address to transfer to
+    /// @param _value The amount of tokens to transfer
+    /// @return The handle to the transfer's result
+    function transfer(address _to, uint64 _value) public returns (gtBool) {
+        (gtUint64 fromBalance, gtUint64 toBalance) = _getBalances(msg.sender, _to);
+        (gtUint64 newFromBalance, gtUint64 newToBalance, gtBool result) = MpcCore.transfer(fromBalance, toBalance, _value);
+        _setNewBalances(msg.sender, _to, newFromBalance, newToBalance);
+        emit Transfer(msg.sender, _to, _value);
+        return result;
     }
-    
-    /**
-     * @dev Override approve function to include pausable functionality
-     */
-    function approve(address spender, uint256 amount) 
-        public 
-        returns (bool)
-    {
-        return true;
+    /// @notice Transfers the amount of tokens given in the handle _value to address _to
+    /// @param _to The address to transfer to
+    /// @param _value The handle to the amount of tokens to transfer
+    /// @return The handle to the transfer's result
+    function contractTransfer(address _to, gtUint64 _value) public returns (gtBool) {
+        // Check if the sender is permitted to use the _value handle
+        require(MpcCore.isSenderPermitted(_value));
+        (gtUint64 fromBalance, gtUint64 toBalance) = _getBalances(msg.sender, _to);
+        (gtUint64 newFromBalance, gtUint64 newToBalance, gtBool result) = MpcCore.transfer(fromBalance, toBalance, _value);
+        _setNewBalances(msg.sender, _to, newFromBalance, newToBalance);
+        emit Transfer(msg.sender, _to);
+        return result;
+    }
+
+    function _getBalances(address _from, address _to) private view returns (gtUint64, gtUint64) {
+        return (_balanceOf(_from), _balanceOf(_to));
+    }
+
+    function _balanceOf(address add) private view returns (gtUint64) {
+        gtUint64 balance = balances[add];
+        if (gtUint64.unwrap(balance) == 0){ // 0 means that no balance has been set, set it to 0
+            balance = zero;
+        }
+        return balance;
+    }
+
+    /// @notice Sets the new balances handles for two addresses
+    /// @param _from The address to set the balance for
+    /// @param _to The address to set the balance for
+    /// @param newFromBalance The new balance handle for _from
+    /// @param newToBalance The new balance handle for _to
+    function _setNewBalances(address _from, address _to, gtUint64 newFromBalance, gtUint64 newToBalance) private {
+        // Store the new balances handles in the mapping
+        balances[_from] = newFromBalance;
+        balances[_to] = newToBalance;
+        // Permit the contract and the _from user to use the balance handle
+        MpcCore.permitThis(newFromBalance);
+        MpcCore.permit(newFromBalance, _from);
+        // Permit the contract and the _to to use the balance handle
+        MpcCore.permitThis(newToBalance);
+        MpcCore.permit(newToBalance, _to);
     }
     
     /**
