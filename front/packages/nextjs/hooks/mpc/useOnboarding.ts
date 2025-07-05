@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ethers } from "ethers";
-import { completeOnboarding } from "../../utils/soda/cryptoUtils";
+import { completeOnboarding } from "../../utils/enc/cryptoUtils";
 import { notification } from "~~/utils/scaffold-eth";
 
 export const useOnboarding = () => {
