@@ -9,6 +9,10 @@
   "scripts": {
     "test": "hardhat test test/shieldedToken.test.ts --network \"sepolia-base\"",
     "compile": "hardhat compile",
+    "deploy:factory": "hardhat run scripts/deployShieldedFactory.ts --network \"sepolia-base\"",
+    "deploy:shielded-erc20": "hardhat run scripts/deployErc20viaFactory.ts --network \"sepolia-base\"",
+    "deploy:erc20": "hardhat run scripts/deployErc20.ts --network \"sepolia-base\"",
+    "mint:erc20": "hardhat run scripts/mintErc20.ts --network \"sepolia-base\"",
     "format": "prettier --write ."
   },
   "dependencies": {
