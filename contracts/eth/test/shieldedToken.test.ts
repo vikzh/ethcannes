@@ -128,6 +128,106 @@ describe("ShieldedToken", function () {
     });
   });
 
+  describe("Shield/Unshield Operations", function () {
+    const shieldAmount = 150n * 10n ** 18n; // 100 tokens with 18 decimals
+    const expectedPrivateAmount = 150n * 10n ** 5n; // 100 tokens with 5 decimals
+
+    beforeEach(async function () {
+      // Mint tokens to user for each test
+      await (await mockToken.mint(userAddress, shieldAmount, { gasLimit: 5_000_000 })).wait();
+      // Approve the private token to spend mock tokens
+      await (await mockToken.approve(await shieldedToken.getAddress(), shieldAmount, { gasLimit: 5_000_000 })).wait();
+      // wait 5 seconds to ensure the state is updated
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    });
+
+    it.only("should successfully unshield shielded tokens back to standard tokens", async function () {
+
+      console.log("Shielded token address", await shieldedToken.getAddress());
+      console.log("Clear token address", await mockToken.getAddress());
+
+      console.log("Shielding tokens");
+      await (await shieldedToken.shield(shieldAmount, { gasLimit: 5_000_000 })).wait();
+
+      // Get balance before unshield
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      const balanceBeforeHandle = await shieldedToken["balanceOf(address)"](userAddress);
+      let balanceBefore = balanceBeforeHandle;
+      if (balanceBeforeHandle !== 0n) {
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        balanceBefore = await decryptBalanceViaProxy(balanceBeforeHandle, wallet, userAesKey, PROXY_URL);
+      }
+      expect(balanceBefore).to.equal(expectedPrivateAmount);
+      console.log("Shielding complete");
+      // Store mock token balance before unshield
+      const mockTokenBalanceBefore = await mockToken.balanceOf(userAddress);
+
+      // Store the current block number before unshield
+      const startBlock = await hre.ethers.provider.getBlockNumber();
+
+      // Request unshield
+      console.log("Unshielding tokens");
+      const unshieldTx = await shieldedToken.unshield(expectedPrivateAmount, { gasLimit: 5_000_000 });
+      const unshieldReceipt = await unshieldTx.wait();
+      expect(unshieldReceipt).to.not.be.undefined;
+      await new Promise(resolve => setTimeout(resolve, 5000));
+
+      // Check UnshieldRequested event from the start block
+      console.log("Asserting UnshieldRequested event");
+      const requestFilter = shieldedToken.filters.UnshieldRequested;
+      const requestEvents = await shieldedToken.queryFilter(requestFilter, startBlock);
+      expect(requestEvents.length).to.be.greaterThan(0);
+      expect(requestEvents[0].args[0]).to.equal(userAddress); // 'to' address
+      expect(requestEvents[0].args[1]).to.equal(expectedPrivateAmount); // amount
+      // Wait for callback to be processed with a timeout
+      const maxWaitTime = 30000; // 30 seconds
+      const checkInterval = 2000; // 2 seconds
+      let successEvents: any[] = [];
+      let failedEvents: any[] = [];
+      let successDecryptionEvents: any[] = [];
+
+      const startTime = Date.now();
+      console.log("Checking for Unshield events");
+      while (Date.now() - startTime < maxWaitTime) {
+        // Check all relevant events from the start block
+        successEvents = await shieldedToken.queryFilter(shieldedToken.filters.Unshield, startBlock);
+        failedEvents = await shieldedToken.queryFilter(shieldedToken.filters.UnshieldFailed, startBlock);
+        successDecryptionEvents = await shieldedToken.queryFilter(shieldedToken.filters.SuccessDecryption, startBlock);
+
+        // If we have either a success or failure event, break the loop
+        if (successEvents.length > 0 || failedEvents.length > 0) {
+          break;
+        }
+
+        // Wait for the next check interval
+        console.log("Waiting for next check interval");
+        await new Promise(resolve => setTimeout(resolve, checkInterval));
+      }
+
+      // We expect a successful unshield
+      expect(successEvents.length, "Expected successful unshield event").to.be.greaterThan(0);
+      expect(failedEvents.length, "Expected no failed unshield events").to.equal(0);
+
+      // Check mock token balance difference matches the unshield amount
+      const mockTokenBalanceAfter = await mockToken.balanceOf(userAddress);
+      const balanceDifference = mockTokenBalanceAfter - mockTokenBalanceBefore;
+      expect(balanceDifference, "Mock token balance difference should match shield amount").to.equal(shieldAmount);
+
+      // Check total supply reduced
+      expect(await shieldedToken.totalSupply()).to.equal(0);
+
+      // Check user's private balance is zero
+      const balanceHandle = await shieldedToken["balanceOf(address)"](userAddress);
+      let decryptedBalance = balanceHandle;
+      if (balanceHandle !== 0n) {
+        decryptedBalance = await decryptBalanceViaProxy(balanceHandle, wallet, userAesKey, PROXY_URL);
+      }
+      expect(decryptedBalance).to.equal(0n);
+    });
+
+  });
+
+
   describe("Transfer Operations", function () {
     const shieldAmount = 100n * 10n ** 18n; // 100 tokens with 18 decimals
     const transferAmount = 50n * 10n ** 5n; // 50 tokens with 5 decimals
@@ -149,7 +249,7 @@ describe("ShieldedToken", function () {
       console.log(senderBalance)
     });
 
-    it.only("should successfully transfer private tokens using clear value", async function () {
+    it("should successfully transfer private tokens using clear value", async function () {
       // Transfer to other wallet
       const transferTx = await shieldedToken["transfer(address,uint64)"](otherWallet.address, Number(transferAmount));
       await transferTx.wait();
