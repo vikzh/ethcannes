@@ -122,8 +122,8 @@ contract ShieldedToken {
     /// @return The handle to the transfer's result
     function transferFrom(address _from, address _to, uint64 _value) public returns (gtBool) {
         (gtUint64 fromBalance, gtUint64 toBalance) = _getBalances(_from, _to);
-        gtUint64 allowance = _getGTAllowance(_from, msg.sender);
-        (gtUint64 newFromBalance, gtUint64 newToBalance, gtBool result, gtUint64 newAllowance) = MpcCore.transferWithAllowance(fromBalance, toBalance, _value, allowance);
+        gtUint64 gtAllowance = _getGTAllowance(_from, msg.sender);
+        (gtUint64 newFromBalance, gtUint64 newToBalance, gtBool result, gtUint64 newAllowance) = MpcCore.transferWithAllowance(fromBalance, toBalance, _value, gtAllowance);
         _setApproveValue(_from, msg.sender, newAllowance);
         _setNewBalances(_from, _to, newFromBalance, newToBalance);
         emit Transfer(_from, _to, _value);
@@ -138,8 +138,8 @@ contract ShieldedToken {
         // Check if the sender is permitted to use the _value handle
         require(MpcCore.isSenderPermitted(_value));
         (gtUint64 fromBalance, gtUint64 toBalance) = _getBalances(_from, _to);
-        gtUint64 allowance = _getGTAllowance(_from, msg.sender);
-        (gtUint64 newFromBalance, gtUint64 newToBalance, gtBool result, gtUint64 newAllowance) = MpcCore.transferWithAllowance(fromBalance, toBalance, _value, allowance);
+        gtUint64 gtAllowance = _getGTAllowance(_from, msg.sender);
+        (gtUint64 newFromBalance, gtUint64 newToBalance, gtBool result, gtUint64 newAllowance) = MpcCore.transferWithAllowance(fromBalance, toBalance, _value, gtAllowance);
         _setApproveValue(_from, msg.sender, newAllowance);
         _setNewBalances(_from, _to, newFromBalance, newToBalance);
         emit Transfer(_from, _to);
@@ -158,10 +158,9 @@ contract ShieldedToken {
     /// @param _value The amount of tokens to approve
     /// @return True if the approval was successful
     function approve(address _spender, uint64 _value) public returns (bool) {
-        address owner = msg.sender;
         gtUint64 gt = MpcCore.setPublic64(_value);
-        _setApproveValue(owner, _spender, gt);
-        emit Approval(owner, _spender, _value);
+        _setApproveValue(msg.sender, _spender, gt);
+        emit Approval(msg.sender, _spender, _value);
         return true;
     }
     /// @notice Approves a spender to transfer the amount of tokens given in the handle
@@ -171,9 +170,8 @@ contract ShieldedToken {
     function contractApprove(address _spender, gtUint64 _value) public returns (bool) {
         // Check if the sender is permitted to use the _value handle
         require(MpcCore.isSenderPermitted(_value));
-        address owner = msg.sender;
-        _setApproveValue(owner, _spender, _value);
-        emit Approval(owner, _spender);
+        _setApproveValue(msg.sender, _spender, _value);
+        emit Approval(msg.sender, _spender);
         return true;
     }
     /// @notice Returns the handle to the allowance of a spender
@@ -240,7 +238,7 @@ contract ShieldedToken {
     
     /// @notice Returns the number of decimals used to get its user representation
     /// @return The number of decimals
-    function decimals() public view returns (uint8) {
+    function decimals() public pure returns (uint8) {
         return _decimals;
     }
 }
