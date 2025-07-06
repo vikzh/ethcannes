@@ -2,8 +2,9 @@
   "name": "hardhat-project",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^6.0.0",
-    "hardhat": "^2.25.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.14",
     "dotenv": "^16.4.5",
+    "hardhat": "^2.25.0",
     "node-fetch": "^3.3.2"
   },
   "scripts": {
