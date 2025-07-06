@@ -1,73 +1,88 @@
-# Hardhat 3 Alpha: `mocha` and `ethers` example project
+# Mosaic: Private Transactions on Public Blockchains
 
-> **WARNING**: This example project uses Hardhat 3, which is still in development. Hardhat 3 is not yet intended for production use.
+Mosaic enables fast, private transactions on public blockchains using garbled circuits-based multi-party computation (MPC). Transaction amounts and user data remain encrypted end-to-end, while shield/unshield operations happen almost instantly, far faster than alternatives like FHE.
 
-Welcome to the Hardhat 3 alpha version! This project showcases some of the changes and new features coming in Hardhat 3.
+The system runs on an MPC network where no node ever sees raw data. Garbled circuits allow secure, general-purpose computation on encrypted inputs, enabling privacy-preserving operations like private payments, confidential DeFi trades, KYC checks, and more. State is distributed across public and private layers to combine decentralization, auditability, and performance.
 
-To learn more about the Hardhat 3 Alpha, please visit [its tutorial](https://hardhat.org/hardhat3-alpha). To share your feedback, join our [Hardhat 3 Alpha](https://hardhat.org/hardhat3-alpha-telegram-group) Telegram group or [open an issue](https://github.com/NomicFoundation/hardhat/issues/new?template=hardhat-3-alpha.yml) in our GitHub issue tracker.
+This project directly addresses one of the biggest blockers to institutional adoption of Web3: privacy. It bridges the trustless, permissionless nature of DeFi with the compliance requirements of TradFi — enabling secure, scalable, and compliant private transactions on public infrastructure.
+
+**Product Link**: https://mosaic-git-main-viktanmail-gmailcoms-projects.vercel.app/
 
 ## Project Overview
 
-This example project includes:
+This repository contains the smart contracts infrastructure for Mosaic, built using the Hardhat framework. It includes:
 
-- A simple Hardhat configuration file.
-- Foundry-compatible Solidity unit tests.
+- Smart contracts for shielded tokens and private order books
+- Multi-party computation (MPC) integration contracts
 - TypeScript integration tests using `mocha` and ethers.js
-- Examples demonstrating how to connect to different types of networks, including locally simulating OP mainnet.
+- Deployment scripts and modules for various networks
+- Token factory contracts for creating privacy-enabled assets
 
-## Navigating the Project
+## Project Structure
 
-To get the most out of this example project, we recommend exploring the files in the following order:
+The main components of this project are:
 
-1. Read the `hardhat.config.ts` file, which contains the project configuration and explains multiple changes.
-2. Review the "Running Tests" section and explore the files in the `contracts/` and `test/` directories.
-3. Read the "Make a deployment to Sepolia" section and follow the instructions.
+- `contracts/` - Core smart contracts including ShieldedToken, PrivateOrderBook, and MPC integration
+- `test/` - Comprehensive test suite for contract functionality
+- `ignition/modules/` - Deployment modules for contract deployment
+- `typechain-types/` - Generated TypeScript types for contract interaction
 
-Each file includes inline explanations of its purpose and highlights the changes and new features introduced in Hardhat 3.
+## Key Contracts
+
+- **ShieldedToken**: Privacy-preserving token implementation
+- **ShieldedTokenFactory**: Factory for deploying shielded tokens
+- **PrivateOrderBook**: Private trading functionality
+- **MPC Integration**: Contracts for multi-party computation operations
 
 ## Usage
 
 ### Running Tests
 
-To run all the tests in the project, execute the following command:
+To run all tests in the project:
 
 ```shell
 npx hardhat test
 ```
 
-You can also selectively run the Solidity or `mocha` tests:
+### Contract Deployment
+
+Deploy the ShieldedTokenFactory to a local chain:
 
 ```shell
-npx hardhat test solidity
-npx hardhat test mocha
+npx hardhat ignition deploy ignition/modules/ShieldTokenFactory.ts
 ```
 
-### Make a deployment to Sepolia
-
-This project includes an example Ignition module to deploy the contract. You can deploy this module to a locally simulated chain or to Sepolia.
-
-To run the deployment to a local chain:
+Deploy a test clear token:
 
 ```shell
-npx hardhat ignition deploy ignition/modules/Counter.ts
+npx hardhat ignition deploy ignition/modules/TestClearToken.ts
 ```
 
-To run the deployment to Sepolia, you need an account with funds to send the transaction. The provided Hardhat configuration includes a Configuration Variable called `SEPOLIA_PRIVATE_KEY`, which you can use to set the private key of the account you want to use.
+### Network Deployment
 
-You can set the `SEPOLIA_PRIVATE_KEY` variable using the `hardhat-keystore` plugin or by setting it as an environment variable.
+To deploy to a testnet, you need an account with funds. The Hardhat configuration supports various networks including Sepolia Base.
 
-To set the `SEPOLIA_PRIVATE_KEY` config variable using `hardhat-keystore`:
+Set your private key using environment variables or the hardhat-keystore plugin:
 
 ```shell
 npx hardhat keystore set SEPOLIA_PRIVATE_KEY
 ```
 
-After setting the variable, you can run the deployment with the Sepolia network:
+Deploy to Sepolia Base:
 
 ```shell
-npx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
+npx hardhat ignition deploy --network sepolia-base ignition/modules/ShieldTokenFactory.ts
 ```
+
+## Development
+
+This project uses Hardhat 3 for development and testing. The configuration includes:
+
+- TypeScript support
+- Ethers.js integration
+- Comprehensive testing framework
+- Multi-network deployment support
 
 ---
 
-Feel free to explore the project and provide feedback on your experience with Hardhat 3 Alpha!
+Mosaic represents the next generation of privacy-preserving blockchain infrastructure, enabling institutional-grade privacy while maintaining the benefits of public, decentralized networks.
