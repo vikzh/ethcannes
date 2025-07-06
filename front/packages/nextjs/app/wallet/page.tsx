@@ -7,6 +7,7 @@ import TokenPairsList from "./components/TokenPairsList";
 import { notification } from "~~/utils/scaffold-eth";
 import { useWalletData } from "../../hooks/wallet/useWalletData";
 import { getNetworkDisplayInfo } from "../../utils/wallet/networkUI";
+import OnboardBanner from "../../components/OnboardBanner";
 
 const WalletPage = () => {
   const {
@@ -72,6 +73,7 @@ const WalletPage = () => {
       <div className="w-full max-w-6xl">
         {isConnected && (
           <>
+            <OnboardBanner />
             <PortfolioHeader />
             <div className="bg-white rounded-3xl shadow-lg p-6 mt-6">
               <TokenPairsList
