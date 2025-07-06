@@ -10,7 +10,7 @@ Key use-cases include:
 - On-chain KYC / compliance checks without revealing user data
 - Institutional settlement rails that meet TradFi privacy requirements
 
-👉 **Live demo:** [https://mosaic-git-main-viktanmail-gmailcoms-projects.vercel.app/](https://mosaic-git-main-viktanmail-gmailcoms-projects.vercel.app/)
+👉 **Live demo:** [https://mosaic-mu-two.vercel.app/](https://mosaic-mu-two.vercel.app/)
 
 ## Why Garbled Circuits ?
 Garbled circuits let multiple parties jointly evaluate an arbitrary computation on **encrypted inputs** where *no participant ever sees the raw data*.  
