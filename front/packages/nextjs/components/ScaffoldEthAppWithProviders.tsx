@@ -13,8 +13,18 @@ import { BlockieAvatar } from "~~/components/scaffold-eth";
 import { useInitializeNativeCurrencyPrice } from "~~/hooks/scaffold-eth";
 import { wagmiConfig } from "~~/services/web3/wagmiConfig";
 
+
+
 const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
   useInitializeNativeCurrencyPrice();
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
+      import("@stagewise/toolbar").then(({ initToolbar }) => {
+        initToolbar({ plugins: [] });
+      });
+    }
+  }, []);
 
   return (
     <>

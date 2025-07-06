@@ -8,6 +8,7 @@ export type ScaffoldConfig = {
   alchemyApiKey: string;
   walletConnectProjectId: string;
   onlyLocalBurnerWallet: boolean;
+  rpcOverrides?: Record<number, string>;
 };
 
 export const baseSepolia = defineChain({
@@ -38,6 +39,9 @@ export const baseSepolia = defineChain({
   },
 });
 
+// Export the default Alchemy API key used as a sentinel value elsewhere in the codebase
+export const DEFAULT_ALCHEMY_API_KEY = "demo";
+
 const scaffoldConfig = {
   // The networks on which your DApp is live
   targetNetworks: [baseSepolia],
@@ -62,6 +66,9 @@ const scaffoldConfig = {
 
   // Only show the Burner Wallet when running on hardhat network
   onlyLocalBurnerWallet: true,
+
+  // Optional per-chain RPC overrides used by wagmiConfig
+  rpcOverrides: {},
 } as const satisfies ScaffoldConfig;
 
 export default scaffoldConfig;

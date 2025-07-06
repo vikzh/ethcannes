@@ -158,19 +158,20 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
         {/* Balance */}
         <div>
           <div className="font-semibold text-gray-900">
-            $
-            {pair.clearTokenBalance &&
-            pair.data.clearTokenDecimals !== null &&
-            !isNaN(Number(pair.clearTokenBalance))
-              ? (
-                  parseFloat(
-                    ethers.formatUnits(
-                      pair.clearTokenBalance,
-                      pair.data.clearTokenDecimals,
-                    ),
-                  )
-                ).toFixed(2)
-              : "0.00"}
+            {(() => {
+              if (
+                pair.clearTokenBalance &&
+                pair.data.clearTokenDecimals !== null &&
+                !isNaN(Number(pair.clearTokenBalance))
+              ) {
+                const amount = parseFloat(
+                  ethers.formatUnits(pair.clearTokenBalance, pair.data.clearTokenDecimals),
+                );
+                const usd = amount * (pair.data.baseRate ?? 1);
+                return "$" + usd.toFixed(2);
+              }
+              return "$0.00";
+            })()}
           </div>
           <div className="text-sm text-gray-500">
             {pair.clearTokenBalance &&
@@ -346,14 +347,15 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
               ? "*****"
               : pair.privateTokenBalance && pair.data.privateTokenDecimals !== null
               ? "$" +
-                (
-                  parseFloat(
+                (() => {
+                  const amount = parseFloat(
                     ethers.formatUnits(
                       pair.privateTokenBalance,
                       pair.data.privateTokenDecimals,
                     ),
-                  )
-                ).toFixed(2)
+                  );
+                  return amount.toFixed(2);
+                })()
               : "0.00"}
           </div>
           <div className="text-sm text-gray-500 flex items-center gap-2">
@@ -361,12 +363,15 @@ export const TokenPairCard: React.FC<TokenPairCardProps> = ({
               {isBalanceHidden || !getUserKeyFromStorage() || pair.chainId !== chainId
                 ? "*****"
                 : pair.data.privateTokenDecimals !== null && pair.privateTokenBalance
-                ? parseFloat(
-                    ethers.formatUnits(
-                      pair.privateTokenBalance,
-                      pair.data.privateTokenDecimals,
-                    ),
-                  ).toFixed(2)
+                ? (() => {
+                    const amount = parseFloat(
+                      ethers.formatUnits(
+                        pair.privateTokenBalance,
+                        pair.data.privateTokenDecimals,
+                      ),
+                    );
+                    return amount.toFixed(2);
+                  })()
                 : "*****"}
             </span>
             {/* Toggle visibility button – always rendered */}
