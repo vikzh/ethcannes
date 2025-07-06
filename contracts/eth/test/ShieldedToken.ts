@@ -1,23 +1,20 @@
-import { expect } from 'chai';
-import hre from 'hardhat';
+
+import { expect } from "chai";
+import { network } from "hardhat";
+
 import fetch from 'node-fetch';
 import { Wallet, getBytes, HDNodeWallet } from 'ethers';
-import dotenv from 'dotenv';
 
 import { generateRSAKeyPair, reconstructUserKey, decryptUint } from 'soda-sdk';
 
-import { ShieldedToken } from '../typechain-types';
-import { prepareMessageForBubble } from './utils';
 
-dotenv.config();
+const { ethers } = await network.connect({network: "sepolia"});
 
 const PROXY_URL = process.env.PROXY_URL || 'https://proxy.bubble.sodalabs.net';
 const MNEMONIC = process.env.MNEMONIC;
 if (!MNEMONIC) {
   throw new Error('MNEMONIC environment variable is required');
 }
-
-const wallet = Wallet.fromPhrase(MNEMONIC);
 
 async function getUserKeyViaProxy(signer: Wallet | HDNodeWallet, proxyUrl: string) {
   const keys = generateRSAKeyPair();
@@ -57,7 +54,7 @@ async function decryptBalanceViaProxy(
   const signature = await signer.signMessage(handleBytes);
 
   // Get chain ID from the provider
-  const network = await hre.ethers.provider.getNetwork();
+  const network = await ethers.provider.getNetwork();
   const chainId = Number(network.chainId);
   console.log('Chain ID:', chainId);
   const requestData = {
@@ -81,11 +78,13 @@ async function decryptBalanceViaProxy(
   return decryptUint(BigInt('0x' + encryptedOutput.toString('hex')), userAesKey.toString('hex'));
 }
 
+const wallet = Wallet.fromPhrase(MNEMONIC);
+
 describe('ShieldedToken', function () {
   let userAesKey: Buffer;
   let userAesKeyHex: string;
   let userAddress: string;
-  let shieldedToken: ShieldedToken;
+  let shieldedToken: any;
   let mockToken: any;
   let otherWallet: HDNodeWallet;
 
@@ -97,21 +96,19 @@ describe('ShieldedToken', function () {
     userAddress = wallet.address;
 
     // Create another wallet for testing transfers
-    otherWallet = Wallet.createRandom().connect(hre.ethers.provider) as HDNodeWallet;
+    otherWallet = Wallet.createRandom().connect(ethers.provider) as HDNodeWallet;
 
     // Deploy mock token
     console.log('Deploying mock token...');
-    const MockTokenFactory = await hre.ethers.getContractFactory('ClearToken');
-    mockToken = await MockTokenFactory.deploy('ClearToken', 'TCT');
+    mockToken = await ethers.deployContract("ClearToken", ['ClearToken', 'TCT'], { gasLimit: 5_000_000 });
     await mockToken.waitForDeployment();
+
     console.log('Mock token deployed at:', await mockToken.getAddress());
 
     // Deploy private token
-    const ContractFactory = await hre.ethers.getContractFactory('ShieldedToken');
-    shieldedToken = await ContractFactory.deploy(
+    shieldedToken = await ethers.deployContract('ShieldedToken', ['ssbtUSDC',
       'ssbtUSDC',
-      'ssbtUSDC',
-      await mockToken.getAddress()
+      await mockToken.getAddress()]
     );
     await shieldedToken.waitForDeployment();
     console.log('Deployed ShieldedToken at:', await shieldedToken.getAddress());
@@ -142,7 +139,7 @@ describe('ShieldedToken', function () {
       await new Promise(resolve => setTimeout(resolve, 5000));
     });
 
-    it.only('should successfully unshield shielded tokens back to standard tokens', async function () {
+    it('should successfully unshield shielded tokens back to standard tokens', async function () {
       console.log('Shielded token address', await shieldedToken.getAddress());
       console.log('Clear token address', await mockToken.getAddress());
 
@@ -168,7 +165,7 @@ describe('ShieldedToken', function () {
       const mockTokenBalanceBefore = await mockToken.balanceOf(userAddress);
 
       // Store the current block number before unshield
-      const startBlock = await hre.ethers.provider.getBlockNumber();
+      const startBlock = await ethers.provider.getBlockNumber();
 
       // Request unshield
       console.log('Unshielding tokens');
@@ -287,7 +284,7 @@ describe('ShieldedToken', function () {
       console.log('Transfer transaction hash:', transferTx.hash);
 
       // Check sender's balance
-      const senderBalanceHandle = await shieldedToken['balanceOf(address)'](userAddress);
+      const senderBalanceHandle = await shieldedToken['balanceOf(address)'](wallet.address);
       console.log(senderBalanceHandle);
 
       const senderBalance = await decryptBalanceViaProxy(

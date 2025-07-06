@@ -16,7 +16,7 @@ Privacy-focused cryptocurrency wallet built on Scaffold-ETH 2 using SodaLabs dep
 
 ### Day 1: Contract Setup
 - [ ] Update `deployedContracts.ts`
-- [ ] Configure Base Sepolia network in hardhat.config.ts
+- [ ] Configure Base Sepolia network in hardhat_bkp.config.ts
 - [ ] Add contract ABIs to project
 - [ ] Test factory connection
 
