@@ -1,0 +1,146 @@
+type PrivateERC20Factory @entity(immutable: false) {
+  id: Bytes! # factory address
+  totalTokensCreated: BigInt!
+  tokens: [PrivateERC20Token!]! @derivedFrom(field: "factory")
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type PrivateERC20Token @entity(immutable: true) {
+  id: Bytes! # token address
+  name: String!
+  symbol: String!
+  underlying: Bytes! # address
+  creator: Bytes! # address
+  factory: PrivateERC20Factory!
+  createdAtBlock: BigInt!
+  createdAtTimestamp: BigInt!
+  creationTransactionHash: Bytes!
+  
+  # Derived relationships
+  approvals: [Approval!]! @derivedFrom(field: "token")
+  approvals1: [Approval1!]! @derivedFrom(field: "token")
+  invalidDecryptSizes: [InvalidDecryptSize!]! @derivedFrom(field: "token")
+  shields: [Shield!]! @derivedFrom(field: "token")
+  successDecryptions: [SuccessDecryption!]! @derivedFrom(field: "token")
+  transfers: [Transfer!]! @derivedFrom(field: "token")
+  transfers1: [Transfer1!]! @derivedFrom(field: "token")
+  unshields: [Unshield!]! @derivedFrom(field: "token")
+  unshieldFailed: [UnshieldFailed!]! @derivedFrom(field: "token")
+  unshieldRequests: [UnshieldRequested!]! @derivedFrom(field: "token")
+}
+
+type TokenCreated @entity(immutable: true) {
+  id: Bytes!
+  token: Bytes! # address
+  name: String!
+  symbol: String!
+  underlying: Bytes! # address
+  creator: Bytes! # address
+  factory: PrivateERC20Factory!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Approval @entity(immutable: true) {
+  id: Bytes!
+  token: PrivateERC20Token! # reference to the token
+  _owner: Bytes! # address
+  _spender: Bytes! # address
+  _value: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Approval1 @entity(immutable: true) {
+  id: Bytes!
+  token: PrivateERC20Token! # reference to the token
+  _owner: Bytes! # address
+  _spender: Bytes! # address
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type InvalidDecryptSize @entity(immutable: true) {
+  id: Bytes!
+  token: PrivateERC20Token! # reference to the token
+  expected: BigInt! # uint256
+  received: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Shield @entity(immutable: true) {
+  id: Bytes!
+  token: PrivateERC20Token! # reference to the token
+  from: Bytes! # address
+  amount: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type SuccessDecryption @entity(immutable: true) {
+  id: Bytes!
+  token: PrivateERC20Token! # reference to the token
+  decryptID: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Transfer @entity(immutable: true) {
+  id: Bytes!
+  token: PrivateERC20Token! # reference to the token
+  _from: Bytes! # address
+  _to: Bytes! # address
+  _value: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Transfer1 @entity(immutable: true) {
+  id: Bytes!
+  token: PrivateERC20Token! # reference to the token
+  _from: Bytes! # address
+  _to: Bytes! # address
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Unshield @entity(immutable: true) {
+  id: Bytes!
+  token: PrivateERC20Token! # reference to the token
+  to: Bytes! # address
+  amount: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type UnshieldFailed @entity(immutable: true) {
+  id: Bytes!
+  token: PrivateERC20Token! # reference to the token
+  to: Bytes! # address
+  amount: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type UnshieldRequested @entity(immutable: true) {
+  id: Bytes!
+  token: PrivateERC20Token! # reference to the token
+  to: Bytes! # address
+  amount: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
