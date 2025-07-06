@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from "react";
-import { useTargetNetwork } from "./useTargetNetwork";
+import { useTargetNetwork } from "~~/hooks/scaffold-eth/useTargetNetwork";
 import { useInterval } from "usehooks-ts";
 import scaffoldConfig from "~~/scaffold.config";
 import { useGlobalState } from "~~/services/store/store";

@@ -50,8 +50,9 @@ export const decryptBalanceViaProxy = async (
   const handleHex = `0x${balanceHandle.toString(16).padStart(64, "0")}`;
   const handleBytes = ethers.getBytes(handleHex);
 
-  // Sign the handle bytes
-  const signature = await signer.signMessage(handleBytes);
+  // Sign a base-64 string representation of the handle so that the wallet popup shows readable text
+  const handleBase64 = Buffer.from(handleBytes).toString("base64");
+  const signature = await signer.signMessage(handleBase64);
 
   // Get chain ID from the provider
   const network = await signer.provider?.getNetwork();
@@ -79,7 +80,9 @@ export const completeOnboarding = async (signer: ethers.Signer): Promise<string>
 
   // 2. Sign the public key with the connected wallet
   const publicKeyBytes = new Uint8Array(publicKey instanceof Uint8Array ? publicKey : Uint8Array.from(publicKey));
-  const signedEKString = await signer.signMessage(publicKeyBytes);
+  // Sign a base-64 string so MetaMask shows readable text
+  const publicKeyBase64 = Buffer.from(publicKeyBytes).toString("base64");
+  const signedEKString = await signer.signMessage(publicKeyBase64);
   const signedEK = ethers.getBytes(signedEKString);
 
   // 3. Prepare request data

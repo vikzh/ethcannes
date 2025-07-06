@@ -137,3 +137,6 @@ export function getTargetNetworks(): ChainWithAttributes[] {
     ...NETWORKS_EXTRA_DATA[targetNetwork.id],
   }));
 }
+
+// A helper type representing the chain IDs configured in scaffold.config.ts
+export type AllowedChainIds = (typeof scaffoldConfig)["targetNetworks"][number]["id"];
