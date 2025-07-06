@@ -1,0 +1,8 @@
+{
+  "base-sepolia": {
+    "PrivateERC20Factory": {
+      "address": "0x7e58A85165722785AE9CeaDa3D8c2188DCEADDAb",
+      "startBlock": 27802758
+    }
+  }
+}

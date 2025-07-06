@@ -1,0 +1,75 @@
+specVersion: 1.2.0
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: PrivateERC20Factory
+    network: base-sepolia
+    source:
+      address: "0xC3Fefe6784237F23E41403e292315A4dFc013c71"
+      abi: PrivateERC20Factory
+      startBlock: 27991530
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - PrivateERC20Factory
+        - PrivateERC20Token
+        - TokenCreated
+      abis:
+        - name: PrivateERC20Factory
+          file: ./abis/PrivateERC20Factory.json
+        - name: PrivateERC20Contract
+          file: ./abis/PrivateERC20Contract.json
+      eventHandlers:
+        - event: TokenCreated(indexed address,string,string,indexed address,indexed address)
+          handler: handleTokenCreated
+      file: ./src/private-erc-20-factory.ts
+templates:
+  - kind: ethereum/contract
+    name: PrivateERC20Contract
+    network: base-sepolia
+    source:
+      abi: PrivateERC20Contract
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Approval
+        - Approval1
+        - InvalidDecryptSize
+        - Shield
+        - SuccessDecryption
+        - Transfer
+        - Transfer1
+        - Unshield
+        - UnshieldFailed
+        - UnshieldRequested
+        - PrivateERC20Token
+      abis:
+        - name: PrivateERC20Contract
+          file: ./abis/PrivateERC20Contract.json
+      eventHandlers:
+        - event: Approval(indexed address,indexed address,uint256)
+          handler: handleApproval
+        - event: Approval(indexed address,indexed address)
+          handler: handleApproval1
+        - event: InvalidDecryptSize(uint256,uint256)
+          handler: handleInvalidDecryptSize
+        - event: Shield(indexed address,uint256)
+          handler: handleShield
+        - event: SuccessDecryption(uint256)
+          handler: handleSuccessDecryption
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+        - event: Transfer(indexed address,indexed address)
+          handler: handleTransfer1
+        - event: Unshield(indexed address,uint256)
+          handler: handleUnshield
+        - event: UnshieldFailed(indexed address,uint256)
+          handler: handleUnshieldFailed
+        - event: UnshieldRequested(indexed address,uint256)
+          handler: handleUnshieldRequested
+      file: ./src/private-erc-20-contract.ts
