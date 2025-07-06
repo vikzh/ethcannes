@@ -7,8 +7,10 @@ import { useWalletActions } from "../../../hooks/wallet/useWalletActions";
 
 // Token logo mapping - same as in TokenPairCard
 export const TOKEN_LOGOS: Record<string, string> = {
-  "0x331dacc9928d783c34b6b0f3961cad4a948155af": "https://etherscan.io/token/images/usdc_ofc_32.svg",
-  "0x353f9140fd398ec8ec16d3cc72c7d7db61c93a41": "https://etherscan.io/token/images/weth_28.png?v=2",
+  "0x331dacc9928d783c34b6b0f3961cad4a948155af":
+    "https://logotic.me/system/assets/uploads/vector-files/usdc-1671744456-logotic-brand.svg?width=64&height=64",
+  "0x353f9140fd398ec8ec16d3cc72c7d7db61c93a41":
+    "https://logotic.me/system/assets/uploads/vector-files/weth-1671744457-logotic-brand.svg?width=64&height=64",
 };
 
 interface Props {
