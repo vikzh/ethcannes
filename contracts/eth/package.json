@@ -1,23 +1,29 @@
 {
-  "name": "hardhat-project",
+  "name": "hardhat3",
+  "type": "module",
+  "version": "1.0.0",
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^6.0.0",
-    "@nomicfoundation/hardhat-verify": "^2.0.14",
-    "dotenv": "^16.4.5",
-    "hardhat": "^2.25.0",
-    "node-fetch": "^3.3.2"
-  },
-  "scripts": {
-    "test": "hardhat test test/shieldedToken.test.ts --network \"sepolia-base\"",
-    "compile": "hardhat compile",
-    "deploy:factory": "hardhat run scripts/deployShieldedFactory.ts --network \"sepolia-base\"",
-    "deploy:shielded-erc20": "hardhat run scripts/deployErc20viaFactory.ts --network \"sepolia-base\"",
-    "deploy:erc20": "hardhat run scripts/deployErc20.ts --network \"sepolia-base\"",
-    "mint:erc20": "hardhat run scripts/mintErc20.ts --network \"sepolia-base\"",
-    "format": "prettier --write ."
+    "@nomicfoundation/hardhat-ethers": "^4.0.0-next.21",
+    "@nomicfoundation/hardhat-ignition": "^3.0.0-next.21",
+    "@nomicfoundation/hardhat-toolbox-mocha-ethers": "^3.0.0-next.21",
+    "@types/chai": "^4.3.20",
+    "@types/chai-as-promised": "^8.0.2",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.16.0",
+    "chai": "^5.2.0",
+    "ethers": "^6.15.0",
+    "forge-std": "github:foundry-rs/forge-std#v1.9.4",
+    "hardhat": "^3.0.0-next.21",
+    "mocha": "^11.7.1",
+    "typescript": "~5.8.0"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.3.0",
+    "dotenv": "^17.0.1",
+    "node-fetch": "^3.3.2",
     "soda-sdk": "^0.0.2"
+  },
+  "mocha": {
+    "timeout": 20000
   }
 }
