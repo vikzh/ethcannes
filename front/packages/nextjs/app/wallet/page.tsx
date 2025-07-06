@@ -68,28 +68,36 @@ const WalletPage = () => {
     return <Loading />;
   }
 
+  if (!isConnected) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] px-6">
+        <div className="text-center text-lg font-semibold">
+          Please connect your wallet to use Mosaic app.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center justify-start py-8 px-6">
       <div className="w-full max-w-6xl">
-        {isConnected && (
-          <>
-            <OnboardBanner />
-            <PortfolioHeader />
-            <div className="bg-white rounded-3xl shadow-lg p-6 mt-6">
-              <TokenPairsList
-                chainId={chainId}
-                filteredTokenPairs={filteredTokenPairs}
-                isRefreshingBalance={isRefreshingBalance}
-                clickedButton={clickedButton}
-                onNetworkSwitch={handleNetworkSwitch}
-                updateTokenPairBalance={updateTokenPairBalance}
-                handlePrivateBalanceDecrypt={handlePrivateBalanceDecrypt}
-                handleOnboardClick={handleOnboardClick}
-                networkTokenData={networkTokenData}
-              />
-            </div>
-          </>
-        )}
+        <>
+          <OnboardBanner />
+          <PortfolioHeader />
+          <div className="bg-white rounded-3xl shadow-lg p-6 mt-6">
+            <TokenPairsList
+              chainId={chainId}
+              filteredTokenPairs={filteredTokenPairs}
+              isRefreshingBalance={isRefreshingBalance}
+              clickedButton={clickedButton}
+              onNetworkSwitch={handleNetworkSwitch}
+              updateTokenPairBalance={updateTokenPairBalance}
+              handlePrivateBalanceDecrypt={handlePrivateBalanceDecrypt}
+              handleOnboardClick={handleOnboardClick}
+              networkTokenData={networkTokenData}
+            />
+          </div>
+        </>
         {onboardError && <div className="text-red-500 text-center">{onboardError}</div>}
       </div>
 

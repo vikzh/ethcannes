@@ -3,8 +3,8 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChartBarIcon, ClockIcon, PlusIcon } from "@heroicons/react/24/outline";
-import { ChartBarIcon as ChartBarIconSolid, ClockIcon as ClockIconSolid, PlusIcon as PlusIconSolid } from "@heroicons/react/24/solid";
+import { ChartBarIcon, ClockIcon, PuzzlePieceIcon } from "@heroicons/react/24/outline";
+import { ChartBarIcon as ChartBarIconSolid, ClockIcon as ClockIconSolid, PuzzlePieceIcon as PuzzlePieceIconSolid } from "@heroicons/react/24/solid";
 
 type SidebarItem = {
   label: string;
@@ -34,11 +34,12 @@ export const Sidebar = () => {
   return (
     <div className="w-16 lg:w-64 bg-gray-50 min-h-screen flex flex-col border-r border-gray-200">
       {/* Logo */}
-      <div className="p-4 lg:p-6 border-b border-gray-200 flex justify-center lg:justify-start">
+      <div className="p-4 lg:p-6 border-b border-gray-200 flex justify-center">
         <Link href="/" className="flex items-center gap-2">
-          <div className="hidden lg:flex flex-col">
-            <span className="font-bold leading-tight text-gray-900">Mosaic</span>
-          </div>
+          {/* Puzzle logo */}
+          <PuzzlePieceIconSolid className="h-6 w-6 text-soda-blue-600" />
+          {/* App name, visible on larger screens */}
+          <span className="font-bold leading-tight text-gray-900 hidden lg:inline">Mosaic</span>
         </Link>
       </div>
 
