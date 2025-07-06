@@ -11,6 +11,7 @@ export interface NetworkTokenData {
   chainId: number;
   clearTokenName: string | null;
   clearTokenSymbol: string | null;
+  baseRate: number | null;
   clearTokenDecimals: number | null;
   clearTokenBalance: string | null;
   privateTokenName: string | null;
@@ -47,6 +48,7 @@ export const useMultiNetworkTokenData = (address: string | undefined, chainId: n
           chainId: networkId,
           clearTokenName: null,
           clearTokenSymbol: null,
+          baseRate: null,
           clearTokenDecimals: null,
           clearTokenBalance: null,
           privateTokenName: null,

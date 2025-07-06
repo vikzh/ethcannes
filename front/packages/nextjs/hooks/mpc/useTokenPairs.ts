@@ -101,6 +101,13 @@ export const useTokenPairs = (
               ? await fetchTokenBalance(token.underlying, userAddress, networkId)
               : "0";
 
+            // Determine USD base rate for known tokens (simple hard-coded map for now)
+            const upperSym = underlyingMetadata.symbol.toUpperCase();
+            let baseRate = 1; // default for stablecoins like USDC
+            if (upperSym.includes("WETH") || upperSym === "ETH" || upperSym === "WETH") {
+              baseRate = 2130;
+            }
+
             // Create comprehensive token data combining subgraph and on-chain data
             const tokenSpecificData = {
               ...data,
@@ -111,7 +118,8 @@ export const useTokenPairs = (
               // Private token = custom wrapper (subgraph metadata)
               privateTokenName: token.name, // Use actual token name from subgraph
               privateTokenSymbol: token.symbol, // Use actual token symbol from subgraph
-              privateTokenDecimals: 5, // mcp limitation
+              privateTokenDecimals: 5, // mpc limitation
+              baseRate,
             };
 
             const finalPair = {
