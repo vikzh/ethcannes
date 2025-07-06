@@ -2,7 +2,7 @@
 
 ## Overview
 Mosaic enables **near-instant, end-to-end-encrypted transfers and DeFi interactions** on public Ethereum-compatible chains.  
-Using a garbled–circuits-based **multi-party computation (MPC) network** developed by **Soda Labs**, Mosaic wraps any ERC-20 token in a *shielded* version that keeps amounts and user data private while preserving on-chain auditability.
+Using a [garbled–circuits-based](https://www.sodalabs.xyz/lack-of-privacy-sidelines-institutions-from-web3/) **multi-party computation (MPC) network** developed by **[Soda Labs](https://www.sodalabs.xyz/)**, Mosaic wraps any ERC-20 token in a *shielded* version that keeps amounts and user data private while preserving on-chain auditability.
 
 Key use-cases include:
 - Private payments & payroll
